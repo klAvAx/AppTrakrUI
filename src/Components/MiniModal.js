@@ -27,13 +27,13 @@ function MiniModal({ title, type, show, onHide, onSubmit, items, edit }) {
         if(value[stateKey].requires.length > 0) {
           let allDepsValid = true;
           for(const depends of value[stateKey].requires) {
-            if(value[depends].value) {
-              allDepsValid = (state[depends].value && state[stateKey].value !== "" && state[stateKey].value !== 0 && state[stateKey].value !== false) && allDepsValid;
+            if(value[depends]?.value) {
+              allDepsValid = (state[depends]?.value && state[stateKey]?.value !== "" && state[stateKey]?.value !== 0 && state[stateKey]?.value !== false) && allDepsValid;
             }
           }
           valid = allDepsValid && valid;
         } else {
-          valid = (value[stateKey].value !== "" && value[stateKey].value !== 0 && value[stateKey].value !== false) && valid;
+          valid = (value[stateKey]?.value !== "" && value[stateKey]?.value !== 0 && value[stateKey]?.value !== false) && valid;
         }
       }
     });
@@ -48,8 +48,8 @@ function MiniModal({ title, type, show, onHide, onSubmit, items, edit }) {
     
     let data = {};
     for(const _data in value) {
-      if(value[_data].value) {
-        data[_data] = value[_data].value;
+      if(value[_data]?.value) {
+        data[_data] = value[_data]?.value;
       }
     }
     
@@ -211,7 +211,7 @@ function MiniModal({ title, type, show, onHide, onSubmit, items, edit }) {
               _placeholder = placeholder[`${item.name}_${itemIndex}`];
             } else {
               let stateKey = Object.keys(item.placeholder)[0];
-              _placeholder = placeholder[`${item.name}_${itemIndex}`][state[stateKey].value];
+              _placeholder = placeholder[`${item.name}_${itemIndex}`][state[stateKey]?.value];
             }
           }
         }
@@ -406,7 +406,7 @@ function MiniModal({ title, type, show, onHide, onSubmit, items, edit }) {
                     </Tooltip>
                     <input
                       ref={inputField}
-                      value={state[items[0].name].value}
+                      value={state[items[0].name]?.value}
                       onChange={(e) => setState((prevState) => {
                         return {
                           ...prevState,
