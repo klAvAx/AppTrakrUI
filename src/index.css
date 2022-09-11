@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+    width: 100vw;
+    height: 100vh;
+}
+
+body {
+    display: flex;
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+#root {
+    display: flex;
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    padding: 2px;
+    background-color: #1f2937;
+    flex-direction: column;
+    align-items: center;
+    overflow: hidden;
+}
+
+#mainContainer {
+    display: block;
+    position: relative;
+    top: 64px;
+    width: 100%;
+    height: calc(100% - 64px);
+    overflow: auto;
+}
+
+.appDragRegion {
+    -webkit-user-select: none;
+    -webkit-app-region: drag;
+}
+
+.appNoDragRegion {
+    -webkit-user-select: text;
+    -webkit-app-region: no-drag;
+}
