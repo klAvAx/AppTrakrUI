@@ -41,7 +41,12 @@ function ProcessListPage() {
                 <h2 className="font-bold">{process.WindowTitle}</h2>
               )}
             >
-              <div className="w-full truncate transition-colors duration-250 dark:text-slate-350">
+              <div
+                className="w-full truncate transition-colors duration-250 dark:text-slate-350 select-none cursor-copy"
+                onClick={() => {
+                  navigator.clipboard.writeText(process.WindowTitle)
+                }}
+              >
                 <Marquee text={process.WindowTitle} />
               </div>
             </Tooltip>
@@ -50,13 +55,19 @@ function ProcessListPage() {
                 id={`tooltip_${procIndex}_exec`}
                 placement="leftBottom"
                 noTextWrap={true}
+                wrapperClassList={"w-9/12"}
                 content={(
                   <h2 className="font-bold text-base">
                     <I18N index="processlist_text_process_executable" text="Process Executable" />
                   </h2>
                 )}
               >
-                <div className="w-full truncate mr-2 transition-colors duration-250 dark:text-slate-350">
+                <div
+                  className="w-full truncate mr-2 transition-colors duration-250 dark:text-slate-350 select-none cursor-copy"
+                  onClick={() => {
+                    navigator.clipboard.writeText(process.Executable)
+                  }}
+                >
                   {process.Executable}
                 </div>
               </Tooltip>
@@ -64,13 +75,14 @@ function ProcessListPage() {
                 id={`tooltip_${procIndex}_time`}
                 placement="rightBottom"
                 noTextWrap={true}
+                wrapperClassList={""}
                 content={(
                   <h2 className="font-bold text-base">
                     <I18N index="processlist_text_time_process_started" text="Time Process Started" />
                   </h2>
                 )}
               >
-                <div className="text-right whitespace-nowrap transition-colors duration-250 dark:text-slate-350">
+                <div className="text-right whitespace-nowrap transition-colors duration-250 dark:text-slate-350 select-none">
                   {formatDate(new Date(process.StartTime*1000))}
                 </div>
               </Tooltip>

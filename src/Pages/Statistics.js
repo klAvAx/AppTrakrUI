@@ -244,7 +244,7 @@ function StatisticsPage() {
     const titleID = `${processID}T`;
     const _expanded = collapsed?.[titleID];
     
-    const titles = process.processMeta.Title;
+    const titles = process.titles;
     const titleCount = Object.keys(titles).length;
     const expandable = titleCount > _latestTitleCount;
     
@@ -267,8 +267,11 @@ function StatisticsPage() {
       
       const html = (
         <div key={`title_${titleTimestampIndex}`} className='flex w-full'>
-          <div className='w-full transition-colors duration-250 text-slate-900 dark:text-slate-350'><Marquee text={process.processMeta.Title[titleTimestamp]} /></div>
-          <div className={`ml-2 text-right whitespace-nowrap transition-colors duration-250 text-slate-900 dark:text-slate-350 ${process.startedAt && process.stoppedAt ? '' : (titleTimestampIndex === lastTimestampIndex ? 'jsTimer' : '')}`}>
+          <div className='w-full transition-colors duration-250 text-slate-900 dark:text-slate-350 select-none cursor-copy' onClick={() => {navigator.clipboard.writeText(process.titles[titleTimestamp])}}><Marquee text={process.titles[titleTimestamp]} /></div>
+          <div
+            className={`ml-2 text-right whitespace-nowrap transition-colors duration-250 text-slate-900 dark:text-slate-350 select-none cursor-copy ${process.startedAt && process.stoppedAt ? '' : (titleTimestampIndex === lastTimestampIndex ? 'jsTimer' : '')}`}
+            onClick={() => {navigator.clipboard.writeText(formatTimestampToElapsedTime(runtime))}}
+          >
             {formatTimestampToElapsedTime(runtime)}
           </div>
         </div>
@@ -342,11 +345,17 @@ function StatisticsPage() {
       }
       
       for(const _item of group.items) {
+        if(_item.id === null || _item.rule_id === null || _item.rule_group_id === null) continue;
+        
         let item = {..._item};
   
         // Expand JSON Object
-        item.processMeta = JSON.parse(item.processMeta);
-  
+        try {
+          item.titles = JSON.parse(item.titles);
+        } catch (error) {
+          console.error(error);
+        }
+        
         if(item.startedAt && item.stoppedAt) {
           // Potential Time Calculation BugFix
           if(sorted[group.id]['groupRuntime'] === 0) {
@@ -432,7 +441,7 @@ function StatisticsPage() {
                     </h2>
                   )}
                 >
-                  <div className="w-6 h-6 mr-2">
+                  <div className="w-6 h-6 mr-2 cursor-copy" onClick={() => {navigator.clipboard.writeText(formatTimestampToElapsedTime(sorted[group].groupRuntime, showElapsedDays))}}>
                     <span className='sr-only'><I18N index="statistics_text_total_runtime_x" replace={{"%s": formatTimestampToElapsedTime(sorted[group].groupRuntime, showElapsedDays)}} noDev={true} /></span>
                     <Clock
                       animate={sorted[group].groupActive}
@@ -442,7 +451,7 @@ function StatisticsPage() {
                     />
                   </div>
                 </Tooltip>
-                <div className="w-full truncate mr-2 transition-colors duration-250 dark:text-slate-350">{sorted[group].groupName}</div>
+                <div className="w-full truncate mr-2 transition-colors duration-250 dark:text-slate-350 select-none">{sorted[group].groupName}</div>
                 {
                   sorted[group].unforeseenConsequences === "typeA" || sorted[group].unforeseenConsequences === "typeB" ?
                     <Tooltip
@@ -604,7 +613,7 @@ function StatisticsPage() {
                   {sorted[group].items.length ? sorted[group].items.map((process, processIndex) => {
                     const processID = `G${groupIndex}P${processIndex}`;
                     const _collapsedProcess = collapsed?.[processID];
-      
+                    
                     return (
                       <div
                         key={`process_${processIndex}`}
@@ -681,30 +690,44 @@ function StatisticsPage() {
                           </div>
                           {!_collapsedProcess ? (
                             <div className={`flex flex-col`}>
-                              {typeof process.processMeta.Title === "string" ? (
+                              {Object.keys(process.titles).length === 1 ? (
                                 <React.Fragment>
                                   <h3 className="w-full mb-2 text-center font-bold select-none whitespace-nowrap transition-colors duration-250 text-slate-900 dark:text-slate-350">
                                     <I18N index='statistics_heading_window_title' text='Window Title' />
                                   </h3>
-                                  <div className="w-full mb-2 transition-colors duration-250 text-slate-900 dark:text-slate-350">
-                                    <Marquee text={process.processMeta.Title} />
+                                  <div
+                                    className="w-full mb-2 transition-colors duration-250 text-slate-900 dark:text-slate-350 select-none cursor-copy"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(process.titles[Object.keys(process.titles)[0]])
+                                    }}
+                                  >
+                                    <Marquee text={process.titles[Object.keys(process.titles)[0]]} />
                                   </div>
                                 </React.Fragment>
                               ) : constructTitles(processID, process, currentTime)}
                               <div className='flex w-full gap-2'>
                                 <div className='flex w-full flex-col'>
-                                  <h2 className="w-full text-center font-bold whitespace-nowrap transition-colors duration-250 text-slate-900 dark:text-slate-350">
+                                  <h2 className="w-full text-center font-bold whitespace-nowrap transition-colors duration-250 text-slate-900 dark:text-slate-350 select-none">
                                     <I18N index='statistics_heading_started_at' text='Started At' />
                                   </h2>
-                                  <div className='w-full truncate text-center transition-colors duration-250 text-slate-900 dark:text-slate-350'>
+                                  <div
+                                    className='w-full truncate text-center transition-colors duration-250 text-slate-900 dark:text-slate-350 select-none cursor-copy'
+                                    onClick={() => {navigator.clipboard.writeText(formatTimestampToDate(process.startedAt))}}
+                                  >
                                     {formatTimestampToDate(process.startedAt)}
                                   </div>
                                 </div>
                                 <div className='flex w-full flex-col'>
-                                  <h2 className="w-full text-center font-bold whitespace-nowrap transition-colors duration-250 text-slate-900 dark:text-slate-350">
+                                  <h2 className="w-full text-center font-bold whitespace-nowrap transition-colors duration-250 text-slate-900 dark:text-slate-350 select-none">
                                     <I18N index='statistics_heading_total_runtime' text='Total Runtime' />
                                   </h2>
-                                  <div className={`w-full truncate text-center transition-colors duration-250 text-slate-900 dark:text-slate-350 ${process.startedAt && process.stoppedAt ? '' : 'jsTimer'}`}>
+                                  <div
+                                    className={`w-full truncate text-center transition-colors duration-250 text-slate-900 dark:text-slate-350 select-none cursor-copy ${process.startedAt && process.stoppedAt ? '' : 'jsTimer'}`}
+                                    onClick={() => {navigator.clipboard.writeText(process.startedAt && process.stoppedAt ?
+                                      formatTimestampToElapsedTime(process.stoppedAt - process.startedAt) :
+                                      formatTimestampToElapsedTime(currentTime - process.startedAt)
+                                    )}}
+                                  >
                                     {process.startedAt && process.stoppedAt ?
                                       formatTimestampToElapsedTime(process.stoppedAt - process.startedAt) :
                                       formatTimestampToElapsedTime(currentTime - process.startedAt)
@@ -712,10 +735,13 @@ function StatisticsPage() {
                                   </div>
                                 </div>
                                 <div className='flex w-full flex-col'>
-                                  <h2 className="w-full text-center font-bold whitespace-nowrap transition-colors duration-250 text-slate-900 dark:text-slate-350">
+                                  <h2 className="w-full text-center font-bold whitespace-nowrap transition-colors duration-250 text-slate-900 dark:text-slate-350 select-none">
                                     <I18N index='statistics_heading_stopped_at' text='Stopped At' />
                                   </h2>
-                                  <div className='w-full truncate text-center transition-colors duration-250 text-slate-900 dark:text-slate-350'>
+                                  <div
+                                    className='w-full truncate text-center transition-colors duration-250 text-slate-900 dark:text-slate-350 select-none cursor-copy'
+                                    onClick={() => {navigator.clipboard.writeText(process.stoppedAt ? formatTimestampToDate(process.stoppedAt) : '-')}}
+                                  >
                                     {process.stoppedAt ? formatTimestampToDate(process.stoppedAt) : <I18N index="statistics_text_still_running" text="Still Running" />}
                                   </div>
                                 </div>

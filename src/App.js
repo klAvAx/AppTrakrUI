@@ -13,10 +13,12 @@ import Tooltip from "./Components/Tooltip";
 
 // TODO implement Rich Discord Presence WITH:
 //  *** requires debug testing!!!
+//  *** on recording stop does not stop discord rich presence
+
+// TODO 'text_error_unknown_contact_developer' notification text empty when saving group without selected icon
 
 // Leave for some next version
-// TODO change how statistics are being recorded (instead of saving it as JSON, make a table to be used as a meta key => value relational thing)
-//   this would allow for better filtering and possibly decent-ish CSV export structure
+// TODO implement a log module
 // TODO implement basic update checker (github based, does have to go live before this can be done?)
 // TODO some language lines require inflections
 function App() {

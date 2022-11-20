@@ -1,7 +1,7 @@
 {
   "name": "ui",
   "title": "App Trakr GUI",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "homepage": "./",
   "proxy": "http://localhost:3000/",

@@ -71,10 +71,12 @@ function SimpleDataList({ type, nameKey, items, visibleData, newButtonState, onO
   }, [button1, button2]);
   
   const getData = () => {
-    let columns = ['id'];
-    items.forEach((item) => {
+    let columns = [];
+    for(const item of items) {
+      if(item?.notMeta) continue;
+      
       columns.push(item.name);
-    });
+    }
     dispatch(getDataOfType({
       type: type.toLowerCase(),
       cols: columns

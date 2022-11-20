@@ -342,7 +342,8 @@ function SettingsPage() {
               label: <I18N index="general_text_rule_group" text="Group" />,
               emptyTxt: <I18N index="general_text_select_x" text="Please select %s" replace={{"%s": <I18N index="general_text_group" text="Group" lowerCase={true} noDev={true} />}} noDev={true} />,
               options: groups,
-              required: true
+              required: true,
+              notMeta: true
             },
             {
               name: "type",
