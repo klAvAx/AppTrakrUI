@@ -18,8 +18,8 @@ function IndexPage() {
   
   useEffect(() => {
     // Get Data
-    dispatch(getDataOfType({ type: 'groups', cols: (appSettings.appAllowInternetConnectivity && appSettings.appDiscordEnabled ? ['id', 'name', 'discordIcon', 'discordNiceName', 'discordShowPresence'] : ['id', 'name']) }));
-    dispatch(getDataOfType({ type: 'rules', cols: (appSettings.appAllowInternetConnectivity && appSettings.appDiscordEnabled ? ['group_id', 'rule', 'type', 'discordNiceName', 'discordShowPresence'] : ['group_id', 'rule', 'type']) }));
+    dispatch(getDataOfType({ type: 'groups', cols: (appSettings.appAllowInternetConnectivity && appSettings.appDiscordEnabled ? ['name', 'discordIcon', 'discordNiceName', 'discordShowPresence'] : ['name']) }));
+    dispatch(getDataOfType({ type: 'rules', cols: (appSettings.appAllowInternetConnectivity && appSettings.appDiscordEnabled ? ['rule', 'type', 'discordNiceName', 'discordShowPresence'] : ['rule', 'type']) }));
   }, [appSettings]);
   
   return (
@@ -51,7 +51,7 @@ function IndexPage() {
                   </div>
                 </Tooltip>
               ) : null}
-              <div className="w-full truncate transition-colors duration-250 dark:text-slate-350">{group.name}</div>
+              <div className="w-full truncate transition-colors duration-250 dark:text-slate-350 select-none">{group.name}</div>
               <Tooltip
                 id={`tooltip_${groupIndex}`}
                 placement="rightBottom"
@@ -112,7 +112,12 @@ function IndexPage() {
                           {getIcon(rule.type)}
                         </div>
                       </Tooltip>
-                      <div className="w-full ml-2 truncate text-left text-slate-900 dark:text-slate-300">
+                      <div
+                        className="w-full ml-2 truncate text-left text-slate-900 dark:text-slate-300 select-none cursor-copy"
+                        onClick={() => {
+                          navigator.clipboard.writeText((rule.type === "exec" ? rule.rule : `/${rule.rule}/`));
+                        }}
+                      >
                         <Marquee text={rule.type === "exec" ? rule.rule : `/${rule.rule}/`} />
                       </div>
                     </div>

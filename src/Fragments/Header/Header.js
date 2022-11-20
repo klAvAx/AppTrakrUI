@@ -49,7 +49,7 @@ export default function Header() {
   }, [backdropShouldClose]);
   
   useEffect(() => {
-    const appName = "App Trackr";
+    const appName = "App Trakr";
     if(location.pathname === "/") {
       updateTitle(appName);
     } else {
@@ -106,7 +106,7 @@ export default function Header() {
           ) : null}
           <div className="flex flex-grow px-22 items-center justify-center">
             <div className="flex items-center text-white text-xl font-black">
-              {location.pathname !== "/" ? routes.find((route) => route.href === location.pathname)?.name : "App Trackr"}
+              {location.pathname !== "/" ? routes.find((route) => route.href === location.pathname)?.name : "App Trakr"}
             </div>
           </div>
           <div className="flex absolute right-16 appNoDragRegion">
