@@ -93,17 +93,19 @@ function SettingsPage() {
         <h2 className={`px-2 py-1 mb-2 text-center text-2xl font-bold border-b-2${groupItemHeaderClass}`}>
           <I18N index="settings_heading_general_group" text="General" />
         </h2>
-        <div className={`flex px-2 mb-2 pb-2 gap-4 items-center border-b-2${groupItemClass}`}>
-          <div className={`text-right w-full${groupItemDescClass}`}>
-            <I18N index="settings_label_auto_start" text="App Start On Boot" />
+        {appSettings.appAutoStart !== null ? (
+          <div className={`flex px-2 mb-2 pb-2 gap-4 items-center border-b-2${groupItemClass}`}>
+            <div className={`text-right w-full${groupItemDescClass}`}>
+              <I18N index="settings_label_auto_start" text="App Start On Boot" />
+            </div>
+            <div className="text-left w-full">
+              <Switch checked={appSettings.appAutoStart} onChange={() => dispatch(toggleAppSetting("appAutoStart"))} className={`${appSettings.appAutoStart ? 'bg-green-300' : 'bg-red-300'} relative inline-flex items-center h-6 rounded-full w-12`}>
+                <span className="sr-only">{appSettings.appAutoStart ? <I18N index="settings_disable_auto_start" text="Disable auto start" noDev={true} /> : <I18N index="settings_enable_auto_start" text="Enable auto start" noDev={true} />}</span>
+                <span className={`${appSettings.appAutoStart ? 'translate-x-7 bg-green-600' : 'translate-x-1 bg-red-600'} inline-block w-4 h-4 transform transition rounded-full`} aria-hidden="true" />
+              </Switch>
+            </div>
           </div>
-          <div className="text-left w-full">
-            <Switch checked={appSettings.appAutoStart} onChange={() => dispatch(toggleAppSetting("appAutoStart"))} className={`${appSettings.appAutoStart ? 'bg-green-300' : 'bg-red-300'} relative inline-flex items-center h-6 rounded-full w-12`}>
-              <span className="sr-only">{appSettings.appAutoStart ? <I18N index="settings_disable_auto_start" text="Disable auto start" noDev={true} /> : <I18N index="settings_enable_auto_start" text="Enable auto start" noDev={true} />}</span>
-              <span className={`${appSettings.appAutoStart ? 'translate-x-7 bg-green-600' : 'translate-x-1 bg-red-600'} inline-block w-4 h-4 transform transition rounded-full`} aria-hidden="true" />
-            </Switch>
-          </div>
-        </div>
+        ) : null}
         <div className={`flex px-2 mb-2 pb-2 gap-4 items-center border-b-2${groupItemClass}`}>
           <div className={`text-right w-full${groupItemDescClass}`}>
             <I18N index="settings_label_language" text="Language" />
@@ -216,7 +218,7 @@ function SettingsPage() {
           </div>
         </div>
       </div>
-      {appSettings.appAllowInternetConnectivity ? (
+      {appSettings.appAllowInternetConnectivity && appSettings.appDiscordPossible ? (
         <div className={`flex flex-col mb-4 border-2 rounded-lg${groupClass}`}>
           <h2 className={`px-2 py-1 mb-2 text-center text-2xl font-bold border-b-2${groupItemHeaderClass}`}>
             <I18N index="settings_heading_discord" text="Discord" />
