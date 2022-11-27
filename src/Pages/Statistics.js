@@ -352,8 +352,16 @@ function StatisticsPage() {
         // Expand JSON Object
         try {
           item.titles = JSON.parse(item.titles);
-        } catch (error) {
-          console.error(error);
+        } catch (err) {
+          window.ipc.sendTrayWindow({
+            action: "error",
+            payload: {
+              error: err.error,
+              filename: `${err.filename}:${err.lineno}`,
+              message: err.message
+            }
+          });
+          console.error(err);
         }
         
         if(item.startedAt && item.stoppedAt) {

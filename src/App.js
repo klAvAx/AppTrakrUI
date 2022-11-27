@@ -27,6 +27,16 @@ function App() {
   const dispatch = useDispatch();
   
   const [kbdState, setKbdState] = useState({});
+  const reportErrors = (err) => {
+    window.ipc.sendTrayWindow({
+      action: "error",
+      payload: {
+        error: err.error,
+        filename: `${err.filename}:${err.lineno}`,
+        message: err.message
+      }
+    });
+  };
   
   useEffect(() => {
     // Runs once On Mount
@@ -53,6 +63,8 @@ function App() {
     window.ipc.onTrayWindow((data) => {
       console.log("ipc", "onTrayWindow", data);
     });
+    
+    window.addEventListener('error', reportErrors);
     
     // Window Controls
     /*window.addEventListener('keyup', (e) => {
@@ -88,6 +100,7 @@ function App() {
     
     return () => {
       // Runs once on Destroy
+      window.removeEventListener('error', reportErrors);
     }
   }, []);
   
