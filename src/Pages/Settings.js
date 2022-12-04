@@ -218,6 +218,28 @@ function SettingsPage() {
           </div>
         </div>
       </div>
+      <div className={`flex flex-col mb-4 border-2 rounded-lg${groupClass}`}>
+        <h2 className={`px-2 py-1 mb-2 text-center text-2xl font-bold border-b-2${groupItemHeaderClass}`}>
+          <I18N index="settings_heading_log_group" text="Logs" />
+        </h2>
+        <div className="flex px-2 mb-2 gap-4 items-center">
+          <div className={`text-right w-full${groupItemDescClass}`}>
+            <I18N index="settings_label_log_retention" text="Log Retention Period" />
+          </div>
+          <div className="text-left w-full">
+            <div className="inline-flex">
+              <input
+                type="number" min={1} max={365} step={1} value={appSettings.appLogRetentionDays}
+                onChange={(e) => dispatch(setAppSetting({setting: "appLogRetentionDays", value: e.target.value}))}
+                className="border-1 border-slate-500 rounded-l-lg pl-2 w-21"
+              />
+              <div className="border-1 border-l-0 border-slate-500 rounded-r-lg px-2 bg-slate-300 w-6">
+                <I18N index="general_time_unit_days" text="days" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       {appSettings.appAllowInternetConnectivity && appSettings.appDiscordPossible ? (
         <div className={`flex flex-col mb-4 border-2 rounded-lg${groupClass}`}>
           <h2 className={`px-2 py-1 mb-2 text-center text-2xl font-bold border-b-2${groupItemHeaderClass}`}>
