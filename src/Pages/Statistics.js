@@ -118,106 +118,49 @@ function StatisticsPage() {
     timer.current = setTimeout(timerFunc, 1000);
   }
   
-  // stickyJS
-  const stickyJS = (headerOffset) => {
-    const _clear = (header) => {
-      header.removeAttribute("data-unstickify");
-      header.removeAttribute("data-stickifyParentHeight");
-  
-      header.style.position = "";
-      header.style.top = "";
-      header.style.left = "";
-      header.style.width = "";
-      header.style.borderTopLeftRadius = "";
-      header.style.borderTopRightRadius = "";
-      header.style.zIndex = "";
-  
-      // Show collapse/expand button
-      for(const item of header.getElementsByClassName("stickyJsHide")) {
-        item.style.display = "";
-      }
-    }
-    const _render = (scroll) => {
-      const headers = document.getElementsByClassName("stickyJs");
-  
-      for(const header of headers) {
-        const unstickScrollTop = header.getAttribute("data-unstickify");
-        const parentHeight = header.getAttribute("data-stickifyParentHeight");
-    
-        if(unstickScrollTop && parentHeight) {
-          if(header.style.position === "fixed") {
-            const parentBottom = ((parseInt(parentHeight) + parseInt(unstickScrollTop)) - 8) - header.offsetHeight;
-        
-            // Check if element should be pushed up
-            if(scroll >= parentBottom) {
-              const pushUpAmount = Math.min(scroll - parentBottom, headerOffset);
-          
-              header.style.top = `${headerOffset - pushUpAmount}px`;
-            } else {
-              header.style.top = `${headerOffset}px`;
-            }
-        
-            // Check if element should unstick (Reached top attachment point)
-            if(scroll <= unstickScrollTop) {
-              _clear(header);
-            }
-          }
-        } else {
-          // Check if element should be stuck
-          if(header.style.position !== "fixed" && scroll > header.offsetParent.offsetTop) {
-            const left = header.offsetParent.offsetLeft;
-            const width = header.clientWidth;
-        
-            header.setAttribute("data-unstickify", header.offsetParent.offsetTop);
-            header.setAttribute("data-stickifyParentHeight", header.offsetParent.offsetHeight);
-        
-            header.style.position = "fixed";
-            header.style.top = `${headerOffset}px`;
-            header.style.left = `${left + 4}px`;
-            header.style.width = `${width}px`;
-            header.style.borderTopLeftRadius = "0";
-            header.style.borderTopRightRadius = "0";
-            header.style.zIndex = "1";
-        
-            // Hide collapse/expand button
-            for(const item of header.getElementsByClassName("stickyJsHide")) {
-              item.style.display = "none";
-            }
-          }
+  // Sticky Headers
+  const observerRef = useRef(null);
+  const observerCallback = (entries, observer) => {
+    entries.forEach((entry) => {
+      if(entry.intersectionRect.top === entry.rootBounds.top) {
+        // Hide collapse button & Square top corners
+        entry.target.classList.remove('rounded-t-md');
+        entry.target.style.zIndex = '1';
+        const collapseBTN = entry.target.getElementsByClassName('collapseBTN')[0];
+        collapseBTN.hidden = true;
+        collapseBTN.disabled = true;
+      } else {
+        if(entry.intersectionRatio === 1) {
+          // Show collapse button & Round top corners
+          entry.target.classList.add('rounded-t-md');
+          entry.target.style.zIndex = '';
+          const collapseBTN = entry.target.getElementsByClassName('collapseBTN')[0];
+          collapseBTN.hidden = false;
+          collapseBTN.disabled = false;
         }
       }
+    });
+  }
+  const stickyAddonsAttach = () => {
+    observerRef.current = new IntersectionObserver(observerCallback, {
+      root: document.querySelector('#mainContainer'),
+      rootMargin: '-1px',
+      threshold: 1.0
+    });
+  
+    let elements = document.getElementsByClassName('sticky');
+    for(const element of elements) {
+      observerRef.current.observe(element);
+    }
+  }
+  const stickyAddonsDetach = () => {
+    let elements = document.getElementsByClassName('sticky');
+    for(const element of elements) {
+      if(observerRef.current) observerRef.current.unobserve(element);
     }
     
-    const _stickyJS = {
-      onScroll: (event) => {
-        const scroll = event.target.scrollTop;
-    
-        _render(scroll);
-      },
-      onResize: (targetElementID) => {
-        _stickyJS.clear();
-        
-        const scroll = document.getElementById(targetElementID).scrollTop
-        _render(scroll);
-      },
-      clear: () => {
-        const headers = document.querySelectorAll('[data-unstickify][data-stickifyParentHeight]');
-    
-        for(const header of headers) {
-          if(header.style.position === "fixed") {
-            _clear(header);
-          }
-        }
-      }
-    }
-    
-    return _stickyJS;
-  }
-  const onScrollStickyJS = (event) => {
-    stickyJS(66).onScroll(event);
-  }
-  const onResizeStickyJS = (event, targetElementID) => {
-    stickyJS(66).onResize(targetElementID);
+    if(observerRef.current) observerRef.current.disconnect();
+    observerRef.current = null;
   }
   
   useEffect(() => {
@@ -225,18 +168,17 @@ function StatisticsPage() {
     
     timerFunc();
     
-    // stickyJS attach
-    document.getElementById("mainContainer").addEventListener("scroll", onScrollStickyJS);
-    window.addEventListener("resize", (event) => onResizeStickyJS(event, "mainContainer"));
-    
     return () => {
       if(timer.current) clearTimeout(timer.current);
-      
-      // stickyJS detach
-      document.getElementById("mainContainer").removeEventListener("scroll", onScrollStickyJS);
-      window.removeEventListener("resize", (event) => onResizeStickyJS(event, "mainContainer"));
     }
   }, []);
+  
+  useEffect(() => {
+    stickyAddonsAttach();
+    return () => {
+      stickyAddonsDetach();
+    }
+  }, [statisticsList]);
   
   const constructTitles = (processID, process, currentTime) => {
     const _latestTitleCount = (!isNaN(parseInt(latestTitleCount)) ? parseInt(latestTitleCount) : 3);
@@ -437,11 +379,11 @@ function StatisticsPage() {
               key={`group_${groupIndex}`}
               className={`flex flex-col relative mb-4 last:mb-0 border-2 rounded-lg transition-colors duration-250 border-slate-400 dark:border-slate-800 bg-slate-200 dark:bg-slate-600`}
             >
-              <div className={`flex p-2 font-bold ${_collapsed ? 'border-b-0 rounded-md' : 'border-b-2 rounded-t-md stickyJs'} transition-colors duration-250 border-slate-400 dark:border-slate-800 bg-slate-400 dark:bg-slate-800`}>
+              <div className={`flex sticky top-0 p-2 font-bold ${_collapsed ? 'border-b-0 rounded-md' : 'border-b-2 rounded-t-md'} transition-colors duration-250 border-slate-400 dark:border-slate-800 bg-slate-400 dark:bg-slate-800`}>
                 <Tooltip
                   id={`tooltip_${groupIndex}`}
                   showArrow={true}
-                  placement="leftBottom"
+                  placement="right"
                   noTextWrap={true}
                   content={(
                     <h2 className="font-bold">
@@ -464,7 +406,7 @@ function StatisticsPage() {
                   sorted[group].unforeseenConsequences === "typeA" || sorted[group].unforeseenConsequences === "typeB" ?
                     <Tooltip
                       id={`tooltip_${groupIndex}_warning`}
-                      placement="rightBottom"
+                      placement="left"
                       noTextWrap={true}
                       content={(
                         <h2 className="font-bold">
@@ -481,7 +423,7 @@ function StatisticsPage() {
                 {filters?.[group] ?
                   <Tooltip
                       id={`tooltip_${groupIndex}_resetFilter`}
-                      placement="rightBottom"
+                      placement="left"
                       noTextWrap={true}
                       content={(
                         <h2 className="font-bold">
@@ -508,7 +450,7 @@ function StatisticsPage() {
                   : null}
                 <Tooltip
                   id={`tooltip_${groupIndex}_delete`}
-                  placement="rightBottom"
+                  placement="left"
                   noTextWrap={true}
                   content={(
                     <h2 className="font-bold">
@@ -550,7 +492,7 @@ function StatisticsPage() {
                 </Tooltip>
                 <Tooltip
                   id={`tooltip_${groupIndex}_export`}
-                  placement="rightBottom"
+                  placement="left"
                   noTextWrap={true}
                   content={(
                     <h2 className="font-bold">
@@ -568,7 +510,7 @@ function StatisticsPage() {
                 </Tooltip>
                 <Tooltip
                   id={`tooltip_${groupIndex}_expand`}
-                  placement="rightBottom"
+                  placement="left"
                   noTextWrap={true}
                   content={(
                     <h2 className="font-bold">
@@ -577,7 +519,7 @@ function StatisticsPage() {
                   )}
                 >
                   <button
-                    className={`w-6 h-6 ml-2 transition-colors duration-250 text-slate-900 hover:text-slate-50 dark:text-slate-400 dark:hover:text-slate-50 ${_collapsed ? '' : 'stickyJsHide'}`}
+                    className={`w-6 h-6 ml-2 transition-colors duration-250 text-slate-900 collapseBTN hover:text-slate-50 dark:text-slate-400 dark:hover:text-slate-50`}
                     onClick={() => dispatch(toggleCollapsed({group: 'statistics', key: groupID}))}
                   >
                     <span className='sr-only'>{ _collapsed ? <I18N index="general_text_expand" noDev={true} /> : <I18N index="general_text_collapse" noDev={true} /> }</span>

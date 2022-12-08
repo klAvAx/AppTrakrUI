@@ -116,6 +116,27 @@ function SettingsPage() {
         </div>
         <div className={`flex px-2 mb-2 pb-2 gap-4 items-center border-b-2${groupItemClass}`}>
           <div className={`text-right w-full${groupItemDescClass}`}>
+            <I18N index="settings_label_tray_action" text="Tray Icon Click Action" />
+          </div>
+          <div className="text-left w-full">
+            <SelectList
+              items={[
+                {
+                  name: <I18N index="general_text_showWindow" text="Show Tray Window" />,
+                  value: 'showWindow'
+                },
+                {
+                  name: <I18N index="general_text_toggleRecord" text="Toggle Recording" />,
+                  value: 'toggleRec'
+                }
+              ]}
+              selected={appSettings.appTrayAction}
+              onChoose={(choice) => dispatch(setAppSetting({setting: "appTrayAction", value: choice}))}
+              />
+          </div>
+        </div>
+        <div className={`flex px-2 mb-2 pb-2 gap-4 items-center border-b-2${groupItemClass}`}>
+          <div className={`text-right w-full${groupItemDescClass}`}>
             <I18N index="settings_label_theme" text="Theme" />
           </div>
           <div className="text-left w-full">

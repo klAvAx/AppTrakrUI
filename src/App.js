@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Routes, Route } from "react-router-dom";
-import { getAppSettings } from "./redux/reducers/electron";
+import { getAppSettings, setTempAppSetting } from "./redux/reducers/electron";
 import { updateRunningList, updateStatisticsList } from "./redux/reducers/processList";
 
 import routes from "./extra/routes";
@@ -11,16 +11,6 @@ import Notification from "./Components/Notification";
 import Backdrop from "./Components/Backdrop";
 import Tooltip from "./Components/Tooltip";
 
-// TODO implement Rich Discord Presence WITH:
-//  *** requires debug testing!!!
-//  *** on recording stop does not stop discord rich presence
-
-// TODO 'text_error_unknown_contact_developer' notification text empty when saving group without selected icon
-
-// Leave for some next version
-// TODO implement a log module
-// TODO implement basic update checker (github based, does have to go live before this can be done?)
-// TODO some language lines require inflections
 function App() {
   const isDev = useSelector(({ electron }) => electron.settings.appIsDev);
   const theme = useSelector(({ electron }) => electron.settings.appTheme);
@@ -50,6 +40,9 @@ function App() {
           break;
         case 'statisticsListUpdate':
           dispatch(updateStatisticsList(data.payload));
+          break;
+        case 'settingUpdate':
+          dispatch(setTempAppSetting(data.payload));
           break;
         default:
           if (isDev) {

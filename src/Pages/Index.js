@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getIcon, getDiscordIcon } from "../extra/typeIcons";
 import { FaAngleDown, FaDiscord } from "react-icons/fa";
@@ -15,6 +15,58 @@ function IndexPage() {
   const collapsed = useSelector(({ UI }) => UI.collapsed?.index);
   
   const dispatch = useDispatch();
+  
+  const observerRef = useRef(null);
+  const observerCallback = (entries, observer) => {
+    entries.forEach((entry) => {
+      if(entry.intersectionRect.top === entry.rootBounds.top) {
+        // Hide collapse button & Square top corners
+        entry.target.classList.remove('rounded-t-md');
+        entry.target.style.zIndex = '1';
+        const collapseBTN = entry.target.getElementsByClassName('collapseBTN')[0];
+        collapseBTN.hidden = true;
+        collapseBTN.disabled = true;
+      } else {
+        if(entry.intersectionRatio === 1) {
+          // Show collapse button & Round top corners
+          entry.target.classList.add('rounded-t-md');
+          entry.target.style.zIndex = '';
+          const collapseBTN = entry.target.getElementsByClassName('collapseBTN')[0];
+          collapseBTN.hidden = false;
+          collapseBTN.disabled = false;
+        }
+      }
+    });
+  }
+  const stickyAddonsAttach = () => {
+    observerRef.current = new IntersectionObserver(observerCallback, {
+      root: document.querySelector('#mainContainer'),
+      rootMargin: '-1px',
+      threshold: 1.0
+    });
+  
+    let elements = document.getElementsByClassName('sticky');
+    for(const element of elements) {
+      observerRef.current.observe(element);
+    }
+  }
+  const stickyAddonsDetach = () => {
+    let elements = document.getElementsByClassName('sticky');
+    for(const element of elements) {
+      if(observerRef.current) observerRef.current.unobserve(element);
+    }
+  
+    if(observerRef.current) observerRef.current.disconnect();
+    observerRef.current = null;
+  }
+  
+  useEffect(() => {
+    stickyAddonsAttach();
+    
+    return () => {
+      stickyAddonsDetach();
+    };
+  }, [dataConfiguredGroups]);
   
   useEffect(() => {
     // Get Data
@@ -33,7 +85,7 @@ function IndexPage() {
             key={`${group.name}_${groupIndex}`}
             className={`flex flex-col relative mb-4 last:mb-0 border-2 rounded-lg transition-colors duration-250 border-slate-400 dark:border-slate-800 bg-slate-200 dark:bg-slate-600`}
           >
-            <div className={`flex p-2 font-bold ${_collapsed ? 'border-b-0 rounded-md' : 'border-b-2 rounded-t-md'} transition-colors duration-250 border-slate-400 dark:border-slate-800 bg-slate-400 dark:bg-slate-800`}>
+            <div className={`flex sticky top-0 p-2 font-bold ${_collapsed ? 'border-b-0 rounded-md' : 'border-b-2 rounded-t-md'} transition-colors duration-250 border-slate-400 dark:border-slate-800 bg-slate-400 dark:bg-slate-800`}>
               {group?.discordShowPresence && (group?.discordIcon || group?.discordNiceName) ? (
                 <Tooltip
                   id={`tooltip_discord_${groupIndex}`}
@@ -54,7 +106,7 @@ function IndexPage() {
               <div className="w-full truncate transition-colors duration-250 dark:text-slate-350 select-none">{group.name}</div>
               <Tooltip
                 id={`tooltip_${groupIndex}`}
-                placement="rightBottom"
+                placement="left"
                 noTextWrap={true}
                 content={(
                   <h2 className="font-bold">
@@ -63,7 +115,7 @@ function IndexPage() {
                 )}
               >
                 <button
-                  className="w-6 h-6 transition-colors duration-250 text-slate-700 hover:text-slate-50 dark:text-slate-500 dark:hover:text-slate-50"
+                  className="w-6 h-6 transition-colors duration-250 text-slate-700 collapseBTN hover:text-slate-50 dark:text-slate-500 dark:hover:text-slate-50"
                   onClick={() => dispatch(toggleCollapsed({group: "index", key: groupIndex}))}
                 >
                   <span className='sr-only'>{ _collapsed ? <I18N index="general_text_expand" noDev={true} /> : <I18N index="general_text_collapse" noDev={true} /> }</span>
@@ -129,8 +181,8 @@ function IndexPage() {
                 )}
               </div>
               ) : null}
-            </div>
-          );
+          </div>
+        );
       }) : (
         <div className="text-center text-xl font-bold">
           <div className="block">
