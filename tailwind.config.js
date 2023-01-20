@@ -40,7 +40,11 @@ module.exports = {
       },
       transitionProperty: {
         'header': 'top, margin, left, right, transform',
-        'tooltip': 'top, left, width, height, opacity, transform'
+        'tooltip': 'top, left, width, height, opacity, transform',
+        'colorWidth': 'color, background-color, border-color, text-decoration-color, fill, stroke, width',
+        'colorHeight': 'color, background-color, border-color, text-decoration-color, fill, stroke, height',
+        'colorWidthTransform': 'color, background-color, border-color, text-decoration-color, fill, stroke, width, transform',
+        'colorHeightTransform': 'color, background-color, border-color, text-decoration-color, fill, stroke, height, transform'
       },
       transitionTimingFunction: {
         'bounce-in': 'cubic-bezier(1, -0.5, 0, 1.5)',

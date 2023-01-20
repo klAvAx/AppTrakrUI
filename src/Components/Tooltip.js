@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from "react";
 // TODO add useEffect on content change and rerender that
 // TODO implement missing placements
 // NOTE maybe redo this as a singular thing which grabs the title automatically?
-const Tooltip = ({ id, showArrow, placement, content, noTextWrap, wrapperClassList, ...props }) => {
+const Tooltip = ({ id, showArrow, placement, content, noTextWrap, wrapperClassList, tooltipClassList, ...props }) => {
   const ChildTag = props.children.type;
   const { children: ChildChildren, ...ChildProps } = props.children.props;
   
@@ -82,9 +82,9 @@ const Tooltip = ({ id, showArrow, placement, content, noTextWrap, wrapperClassLi
         break;
       }
     }
-    
+
     return content ? (
-      <div className={classList.join(" ")}>
+      <div className={classList.concat(tooltipClassList ?? []).join(" ")}>
         {content}
       </div>
     ) : null;
@@ -113,7 +113,8 @@ Tooltip.propTypes = {
   placement: PropTypes.oneOf(['left', 'right', 'top', 'bottom', 'topLeft', 'topRight', 'bottomLeft', 'bottomRight', 'rightTop', 'rightBottom', 'leftTop', 'leftBottom']),
   content: PropTypes.element,
   noTextWrap: PropTypes.bool,
-  wrapperClassList: PropTypes.string
+  wrapperClassList: PropTypes.string,
+  tooltipClassList: PropTypes.arrayOf(PropTypes.string)
 }
 
 export default Tooltip;

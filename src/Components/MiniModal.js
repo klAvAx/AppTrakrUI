@@ -48,9 +48,7 @@ function MiniModal({ title, type, show, onHide, onSubmit, items, edit }) {
     
     let data = {};
     for(const _data in value) {
-      if(value[_data]?.value) {
-        data[_data] = value[_data]?.value;
-      }
+      data[_data] = value[_data]?.value;
     }
     
     const result = await onSubmit(data);
@@ -108,12 +106,34 @@ function MiniModal({ title, type, show, onHide, onSubmit, items, edit }) {
     
     items.forEach((item, itemIndex) => {
       // set State Name
-      newState[item.name] = {
-        value: Object.keys(edit).length > 0 ? edit[item.name] : "",
+      switch(item.type) {
+        case "input":
+        case "select":
+        case "selectIcon": {
+          newState[item.name] = {
+            value: Object.keys(edit).length > 0 && edit[item.name] ? edit[item.name] : ""
+          };
+          break;
+        }
+        case "checkbox": {
+          newState[item.name] = {
+            value: Object.keys(edit).length > 0 && (edit[item.name] === "1" || edit[item.name] === true)
+          };
+          break;
+        }
+        default: {
+          newState[item.name] = {
+            value: null
+          };
+          break;
+        }
+      }
+
+      Object.assign(newState[item.name], {
         required: item?.required || false,
         requires: item?.requires || []
-      };
-      
+      });
+
       // Set placeholders
       if(item?.placeholder) {
         if(typeof item.placeholder === "string") {
@@ -155,13 +175,37 @@ function MiniModal({ title, type, show, onHide, onSubmit, items, edit }) {
   useEffect(() => {
     if(Object.keys(edit).length > 0) {
       let newState = {};
+
       items.forEach((item) => {
-        newState[item.name] = {
-          value: Object.keys(edit).length > 0 ? edit[item.name] : "",
+        switch(item.type) {
+          case "input":
+          case "select":
+          case "selectIcon": {
+            newState[item.name] = {
+              value: Object.keys(edit).length > 0 && edit[item.name] ? edit[item.name] : ""
+            };
+            break;
+          }
+          case "checkbox": {
+            newState[item.name] = {
+              value: Object.keys(edit).length > 0 && (edit[item.name] === "1" || edit[item.name] === true)
+            };
+            break;
+          }
+          default: {
+            newState[item.name] = {
+              value: null
+            };
+            break;
+          }
+        }
+
+        Object.assign(newState[item.name], {
           required: item?.required || false,
           requires: item?.requires || []
-        };
+        });
       });
+
       setState(newState);
     }
   }, [edit]);
@@ -175,198 +219,6 @@ function MiniModal({ title, type, show, onHide, onSubmit, items, edit }) {
       onClose();
     }
   }, [backdropShouldClose]);
-  
-  let inputElements = [];
-  items.forEach((item, itemIndex) => {
-    let requirementsMet = true;
-    let label = null;
-  
-    if(item?.requires?.length > 0) {
-      item.requires.forEach((requirement) => {
-        requirementsMet = requirementsMet && (state[requirement]?.value !== "" && state[requirement]?.value !== 0 && state[requirement]?.value !== false);
-      });
-    }
-    if(!requirementsMet) return;
-    
-    if(item?.label) {
-      if(React.isValidElement(item.label)) {
-        label = item.label;
-      } else {
-        let stateKey = Object.keys(item.label)[0];
-        if(React.isValidElement(item.label[stateKey][state[stateKey]?.value])) {
-          label = item.label[stateKey][state[stateKey]?.value];
-        }
-      }
-    }
-    
-    switch (item.type) {
-      case "input": {
-        let _placeholder = "";
-  
-        if(placeholder?.[`${item.name}_${itemIndex}`]) {
-          if(typeof item.placeholder === "string") {
-            _placeholder = placeholder[`${item.name}_${itemIndex}`];
-          } else {
-            if(item.placeholder.index) {
-              _placeholder = placeholder[`${item.name}_${itemIndex}`];
-            } else {
-              let stateKey = Object.keys(item.placeholder)[0];
-              _placeholder = placeholder[`${item.name}_${itemIndex}`][state[stateKey]?.value];
-            }
-          }
-        }
-        
-        const html = (
-          <input
-            value={state[item.name]?.value}
-            placeholder={_placeholder}
-            onChange={(e) => setState((prevState) => {
-              return {
-                ...prevState,
-                [item.name]: {
-                  ...prevState[item.name],
-                  value: e.target.value
-                }
-              }
-            })}
-            onKeyUp={(e) => e.key === "Enter" ? onInputSubmit(state) : true}
-            className={`block border-1 border-slate-500 rounded-lg p-2 text-base w-full text-slate-900 dark:text-slate-900`}
-          />
-        );
-        
-        inputElements.push(
-          <div key={itemIndex} className={`mb-4 last:mb-0`}>
-            {label ? <label className="text-xl dark:text-slate-300">{label}{html}</label> : html}
-            {item?.comment ? <div className="text-center text-sm pb-3 text-slate-400 font-bold">{item.comment}</div> : null}
-          </div>
-        );
-        break;
-      }
-      case "select": {
-        let selectOptions = [];
-  
-        if(item.options) {
-          selectOptions.push(<option key={`${item.name}_${itemIndex}_empty`} value="" disabled>{item.emptyTxt}</option>);
-          if(Array.isArray(item.options)) {
-            item.options.forEach((option) => {
-              selectOptions.push(
-                <option key={`${item.name}_${option.id}`} value={option.id}>{option.name}</option>
-              );
-            })
-          } else {
-            Object.keys(item.options).forEach((optionKey, optionKeyIndex) => {
-              selectOptions.push(
-                <option key={`${item.name}_${optionKeyIndex}`} value={optionKey}>{item.options[optionKey]}</option>
-              );
-            });
-          }
-        }
-        
-        const html = (
-          <select
-            value={state[item.name]?.value}
-            onChange={(e) => setState((prevState) => {
-              return {
-                ...prevState,
-                [item.name]: {
-                  ...prevState[item.name],
-                  value: e.target.value
-                }
-              }
-            })}
-            className={`block border-1 border-slate-500 rounded-lg p-2 w-full text-slate-900 dark:text-slate-900`}
-          >
-            {selectOptions}
-          </select>
-        );
-        
-        inputElements.push(
-          <div key={itemIndex} className={`mb-4 last:mb-0`}>
-            {label ? <label className="text-xl dark:text-slate-300">{label}{html}</label> : html}
-            {item?.comment ? <div className="text-center text-sm pb-3 text-slate-400 font-bold">{item.comment}</div> : null}
-          </div>
-        );
-        break;
-      }
-      case "checkbox": {
-        const html = (
-          <Switch
-            checked={state[item.name]?.value}
-            onChange={(e) => setState((prevState) => {
-              return {
-                ...prevState,
-                [item.name]: {
-                  ...prevState[item.name],
-                  value: e
-                }
-              }
-            })}
-            className={`${state[item.name]?.value ? 'bg-green-300' : 'bg-red-300'} relative flex items-center h-6 rounded-full w-12`}
-          >
-            <span className={`${state[item.name]?.value ? 'translate-x-7 bg-green-600' : 'translate-x-1 bg-red-600'} inline-block w-4 h-4 transform transition rounded-full`} aria-hidden="true" />
-          </Switch>
-        );
-        
-        inputElements.push(
-          <div key={itemIndex} className={`mb-4 last:mb-0`}>
-            {label ? <label className="text-xl dark:text-slate-300">{label}{html}</label> : html}
-            {item?.comment ? <div className="text-center text-sm pb-3 text-slate-400 font-bold">{item.comment}</div> : null}
-          </div>
-        );
-        break;
-      }
-      case "selectIcon": {
-        let html = [];
-        
-        if(item.options) {
-          for(const key in item.options) {
-            const defaultClasses = "bg-slate-300 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-900 text-slate-900 hover:text-slate-300 dark:text-slate-400 dark:hover:text-slate-100";
-            const activeClasses = "bg-slate-700 hover:bg-slate-300 dark:bg-slate-400 dark:hover:bg-slate-900 text-slate-300 hover:text-slate-900 dark:text-slate-900 dark:hover:text-slate-100";
-            
-            html.push(
-              <div
-                key={`${itemIndex}_${key}`}
-                onClick={(e) => {
-                  setState((prevState) => {
-                    return {
-                      ...prevState,
-                      [item.name]: {
-                        ...prevState[item.name],
-                        value: key
-                      }
-                    }
-                  });
-                }}
-                className={`p-2 rounded-lg cursor-pointer transition-colors duration-250 ${key === state[item.name]?.value ? activeClasses : defaultClasses}`}
-              >
-                <input type="radio" name={item.name} value={key} className="hidden" checked={key === state[item.name]?.value} readOnly />
-                <div className="w-[32px] h-[32px]">{item.options[key]}</div>
-              </div>
-            );
-          }
-        }
-        
-        if(html.length === 0) break;
-        
-        inputElements.push(
-          <div key={itemIndex} className={`mb-4 last:mb-0`}>
-            {label ? (
-              <React.Fragment>
-                <label className="text-xl dark:text-slate-300">{label}</label>
-                <div className="grid grid-cols-10 gap-4 justify-between place-items-center">{html}</div>
-                
-              </React.Fragment>
-            ) : <div className="grid grid-cols-10 gap-4 justify-between place-items-center">{html}</div>}
-            {item?.comment ? <div className="text-center text-sm pb-3 text-slate-400 font-bold">{item.comment}</div> : null}
-          </div>
-        );
-        break;
-      }
-      default:
-        inputElements.push(<div key={itemIndex}>{`Unsupported Item Type (${item.type})`}</div>);
-        break;
-    }
-  });
   
   return (
     <React.Fragment>
@@ -437,7 +289,191 @@ function MiniModal({ title, type, show, onHide, onSubmit, items, edit }) {
                 ) : (
                   <div className="flex flex-col p-4">
                     <div className="columns-1 w-full pb-4">
-                      {inputElements}
+                      {items.map((item, itemIndex) => {
+                        let requirementsMet = true;
+                        let label = null;
+
+                        if(item?.requires?.length > 0) {
+                          item.requires.forEach((requirement) => {
+                            requirementsMet = requirementsMet && (state[requirement]?.value !== "" && state[requirement]?.value !== 0 && state[requirement]?.value !== false);
+                          });
+                        }
+                        if(!requirementsMet) return null;
+
+                        if(item?.label) {
+                          if(React.isValidElement(item.label)) {
+                            label = item.label;
+                          } else {
+                            let stateKey = Object.keys(item.label)[0];
+                            if(React.isValidElement(item.label[stateKey][state[stateKey]?.value])) {
+                              label = item.label[stateKey][state[stateKey]?.value];
+                            }
+                          }
+                        }
+
+                        switch (item.type) {
+                          case "input": {
+                            let _placeholder = "";
+
+                            if(placeholder?.[`${item.name}_${itemIndex}`]) {
+                              if(typeof item.placeholder === "string") {
+                                _placeholder = placeholder[`${item.name}_${itemIndex}`];
+                              } else {
+                                if(item.placeholder.index) {
+                                  _placeholder = placeholder[`${item.name}_${itemIndex}`];
+                                } else {
+                                  let stateKey = Object.keys(item.placeholder)[0];
+                                  _placeholder = placeholder[`${item.name}_${itemIndex}`][state[stateKey]?.value];
+                                }
+                              }
+                            }
+
+                            const html = (
+                                <input
+                                    value={state[item.name]?.value}
+                                    placeholder={_placeholder}
+                                    onChange={(e) => setState((prevState) => {
+                                      return {
+                                        ...prevState,
+                                        [item.name]: {
+                                          ...prevState[item.name],
+                                          value: e.target.value
+                                        }
+                                      }
+                                    })}
+                                    onKeyUp={(e) => e.key === "Enter" ? onInputSubmit(state) : true}
+                                    className={`block border-1 border-slate-500 rounded-lg p-2 text-base w-full text-slate-900 dark:text-slate-900`}
+                                />
+                            );
+
+                            return (
+                                <div key={itemIndex} className={`mb-4 last:mb-0`}>
+                                  {label ? <label className="text-xl dark:text-slate-300">{label}{html}</label> : html}
+                                  {item?.comment ? <div className="text-center text-sm pb-3 text-slate-400 font-bold">{item.comment}</div> : null}
+                                </div>
+                            );
+                          }
+                          case "select": {
+                            let selectOptions = [];
+
+                            if(item.options) {
+                              selectOptions.push(<option key={`${item.name}_${itemIndex}_empty`} value="" disabled>{item.emptyTxt}</option>);
+                              if(Array.isArray(item.options)) {
+                                item.options.forEach((option) => {
+                                  selectOptions.push(
+                                      <option key={`${item.name}_${option.id}`} value={option.id}>{option.name}</option>
+                                  );
+                                })
+                              } else {
+                                Object.keys(item.options).forEach((optionKey, optionKeyIndex) => {
+                                  selectOptions.push(
+                                      <option key={`${item.name}_${optionKeyIndex}`} value={optionKey}>{item.options[optionKey]}</option>
+                                  );
+                                });
+                              }
+                            }
+
+                            const html = (
+                                <select
+                                    value={state[item.name]?.value}
+                                    onChange={(e) => setState((prevState) => {
+                                      return {
+                                        ...prevState,
+                                        [item.name]: {
+                                          ...prevState[item.name],
+                                          value: e.target.value
+                                        }
+                                      }
+                                    })}
+                                    className={`block border-1 border-slate-500 rounded-lg p-2 w-full text-slate-900 dark:text-slate-900`}
+                                >
+                                  {selectOptions}
+                                </select>
+                            );
+
+                            return (
+                                <div key={itemIndex} className={`mb-4 last:mb-0`}>
+                                  {label ? <label className="text-xl dark:text-slate-300">{label}{html}</label> : html}
+                                  {item?.comment ? <div className="text-center text-sm pb-3 text-slate-400 font-bold">{item.comment}</div> : null}
+                                </div>
+                            );
+                          }
+                          case "checkbox": {
+                            const html = (
+                                <Switch
+                                    checked={state[item.name]?.value}
+                                    onChange={(e) => setState((prevState) => {
+                                      return {
+                                        ...prevState,
+                                        [item.name]: {
+                                          ...prevState[item.name],
+                                          value: e
+                                        }
+                                      }
+                                    })}
+                                    className={`${state[item.name]?.value ? 'bg-green-300' : 'bg-red-300'} relative flex items-center h-6 rounded-full w-12`}
+                                >
+                                  <span className={`${state[item.name]?.value ? 'translate-x-7 bg-green-600' : 'translate-x-1 bg-red-600'} inline-block w-4 h-4 transform transition rounded-full`} aria-hidden="true" />
+                                </Switch>
+                            );
+
+                            return (
+                                <div key={itemIndex} className={`mb-4 last:mb-0`}>
+                                  {label ? <label className="text-xl dark:text-slate-300">{label}{html}</label> : html}
+                                  {item?.comment ? <div className="text-center text-sm pb-3 text-slate-400 font-bold">{item.comment}</div> : null}
+                                </div>
+                            );
+                          }
+                          case "selectIcon": {
+                            let html = [];
+
+                            if(item.options) {
+                              for(const key in item.options) {
+                                const defaultClasses = "bg-slate-300 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-900 text-slate-900 hover:text-slate-300 dark:text-slate-400 dark:hover:text-slate-100";
+                                const activeClasses = "bg-slate-700 hover:bg-slate-300 dark:bg-slate-400 dark:hover:bg-slate-900 text-slate-300 hover:text-slate-900 dark:text-slate-900 dark:hover:text-slate-100";
+
+                                html.push(
+                                    <div
+                                        key={`${itemIndex}_${key}`}
+                                        onClick={(e) => {
+                                          setState((prevState) => {
+                                            return {
+                                              ...prevState,
+                                              [item.name]: {
+                                                ...prevState[item.name],
+                                                value: key
+                                              }
+                                            }
+                                          });
+                                        }}
+                                        className={`p-2 rounded-lg cursor-pointer transition-colors duration-250 ${key === state[item.name]?.value ? activeClasses : defaultClasses}`}
+                                    >
+                                      <input type="radio" name={item.name} value={key} className="hidden" checked={key === state[item.name]?.value} readOnly />
+                                      <div className="w-[32px] h-[32px]">{item.options[key]}</div>
+                                    </div>
+                                );
+                              }
+                            }
+
+                            if(html.length === 0) break;
+
+                            return (
+                                <div key={itemIndex} className={`mb-4 last:mb-0`}>
+                                  {label ? (
+                                      <React.Fragment>
+                                        <label className="text-xl dark:text-slate-300">{label}</label>
+                                        <div className="grid grid-cols-10 gap-4 justify-between place-items-center">{html}</div>
+
+                                      </React.Fragment>
+                                  ) : <div className="grid grid-cols-10 gap-4 justify-between place-items-center">{html}</div>}
+                                  {item?.comment ? <div className="text-center text-sm pb-3 text-slate-400 font-bold">{item.comment}</div> : null}
+                                </div>
+                            );
+                          }
+                          default:
+                            return (<div key={itemIndex}>{`Unsupported Item Type (${item.type})`}</div>);
+                        }
+                      })}
                     </div>
                     <div className="flex gap-4 w-full">
                       <Tooltip

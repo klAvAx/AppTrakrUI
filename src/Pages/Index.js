@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getIcon, getDiscordIcon } from "../extra/typeIcons";
-import { FaAngleDown, FaDiscord } from "react-icons/fa";
+import { FaAngleDown, FaDiscord, FaBug } from "react-icons/fa";
 import I18N from "../extra/I18N";
 import Marquee from "../Components/Marquee";
 import { getDataOfType } from "../redux/reducers/simpleDataList";
@@ -22,7 +22,7 @@ function IndexPage() {
       if(entry.intersectionRect.top === entry.rootBounds.top) {
         // Hide collapse button & Square top corners
         entry.target.classList.remove('rounded-t-md');
-        entry.target.style.zIndex = '1';
+        //entry.target.style.zIndex = '1';
         const collapseBTN = entry.target.getElementsByClassName('collapseBTN')[0];
         collapseBTN.hidden = true;
         collapseBTN.disabled = true;
@@ -30,7 +30,7 @@ function IndexPage() {
         if(entry.intersectionRatio === 1) {
           // Show collapse button & Round top corners
           entry.target.classList.add('rounded-t-md');
-          entry.target.style.zIndex = '';
+          //entry.target.style.zIndex = '';
           const collapseBTN = entry.target.getElementsByClassName('collapseBTN')[0];
           collapseBTN.hidden = false;
           collapseBTN.disabled = false;
@@ -79,29 +79,54 @@ function IndexPage() {
       {dataConfiguredGroups && dataConfiguredRules?.length > 0 ? dataConfiguredGroups.map((group, groupIndex) => {
         const rules = dataConfiguredRules.filter((rule) => rule.group_id === group.id);
         const _collapsed = collapsed?.[groupIndex];
-        
+
         return (
           <div
             key={`${group.name}_${groupIndex}`}
             className={`flex flex-col relative mb-4 last:mb-0 border-2 rounded-lg transition-colors duration-250 border-slate-400 dark:border-slate-800 bg-slate-200 dark:bg-slate-600`}
           >
-            <div className={`flex sticky top-0 p-2 font-bold ${_collapsed ? 'border-b-0 rounded-md' : 'border-b-2 rounded-t-md'} transition-colors duration-250 border-slate-400 dark:border-slate-800 bg-slate-400 dark:bg-slate-800`}>
-              {group?.discordShowPresence && (group?.discordIcon || group?.discordNiceName) ? (
-                <Tooltip
-                  id={`tooltip_discord_${groupIndex}`}
-                  placement="leftBottom"
-                  noTextWrap={true}
-                  content={(
-                    <div>
-                      {group?.discordIcon ? <div className="flex gap-2 items-center"><div><I18N index="general_text_icon" text="Icon:" /></div><div className="w-8 h-8">{getDiscordIcon(group.discordIcon)}</div></div> : null}
-                      {group?.discordNiceName ? <div className="flex items-center"><I18N index="general_text_discord_appear_as_x_activity" text="Appears as %s activity" replace={{"%s": <code className="p-1 border-1 rounded-xl bg-slate-100">{group.discordNiceName}</code>}} /></div> : null}
+            <div
+                className={`flex sticky top-0 p-2 font-bold ${_collapsed ? 'border-b-0 rounded-md' : 'border-b-2 rounded-t-md'} transition-colors duration-250 border-slate-400 dark:border-slate-800 bg-slate-400 dark:bg-slate-800`}
+                style={{zIndex: dataConfiguredGroups.length - groupIndex}}
+            >
+              {appSettings.appShowExtraInfo ? (
+                  <Tooltip
+                      id={`tooltip_bug_${groupIndex}`}
+                      placement="right"
+                      noTextWrap={true}
+                      wrapperClassList=""
+                      content={(
+                          <div>
+                            <div>Group ID:<br /><code className="px-2 pt-1 border-1 rounded-xl bg-slate-100">{group.id}</code></div>
+                            <div>Group Name:<br /><code className="px-2 pt-1 border-1 rounded-xl bg-slate-100">{group.name}</code></div>
+                            {group.discordShowPresence !== null ? <div>Group Discord Show Presence:<br /><code className="px-2 pt-1 border-1 rounded-xl bg-slate-100">{group.discordShowPresence === "1" ? "Yes" : "No"}</code></div> : null}
+                            {group.discordIcon !== null ? <div>Group Discord Presence Icon:<br /><code className="px-2 pt-1 border-1 rounded-xl bg-slate-100">{group.discordIcon}</code></div> : null}
+                            {group.discordNiceName !== null ? <div>Group Discord Presence Title:<br /><code className="px-2 pt-1 border-1 rounded-xl bg-slate-100">{group.discordNiceName}</code></div> : null}
+                          </div>
+                      )}
+                  >
+                    <div className="w-6 h-6 p-0.5 mr-2 transition-colors duration-250 dark:text-slate-350">
+                      <FaBug className={`w-full h-full`} />
                     </div>
-                  )}
-                >
-                  <div className="w-6 h-6 mr-2 transition-colors duration-250 dark:text-slate-350">
-                    <FaDiscord className={`w-full h-full`} />
-                  </div>
-                </Tooltip>
+                  </Tooltip>
+              ) : null}
+              {(group?.discordShowPresence === "1" || group?.discordShowPresence === true) && (group?.discordIcon || group?.discordNiceName) ? (
+                  <Tooltip
+                      id={`tooltip_discord_${groupIndex}`}
+                      placement="right"
+                      noTextWrap={true}
+                      wrapperClassList=""
+                      content={(
+                          <div>
+                            {group?.discordIcon ? <div className="flex gap-2 items-center"><div><I18N index="general_text_icon" text="Icon:" /></div><div className="w-8 h-8">{getDiscordIcon(group.discordIcon)}</div></div> : null}
+                            {group?.discordNiceName ? <div className="flex items-center"><I18N index="general_text_discord_appear_as_x_activity" text="Appears as %s activity" replace={{"%s": <code className="px-1 pt-1 mx-2 border-1 rounded-xl bg-slate-100">{group.discordNiceName}</code>}} /></div> : null}
+                          </div>
+                      )}
+                  >
+                    <div className="w-6 h-6 mr-2 transition-colors duration-250 dark:text-slate-350">
+                      <FaDiscord className={`w-full h-full`} />
+                    </div>
+                  </Tooltip>
               ) : null}
               <div className="w-full truncate transition-colors duration-250 dark:text-slate-350 select-none">{group.name}</div>
               <Tooltip
@@ -131,15 +156,37 @@ function IndexPage() {
                       key={`${group.name}_${rule.rule}_${ruleIndex}`}
                       className={`flex p-2 border-b-2 last:border-b-0 transition-colors duration-250 border-slate-400 dark:border-slate-800`}
                     >
+                      {appSettings.appShowExtraInfo ? (
+                          <Tooltip
+                              id={`tooltip_bug_${groupIndex}`}
+                              placement="right"
+                              noTextWrap={true}
+                              wrapperClassList=""
+                              content={(
+                                  <div className="font-bold">
+                                    <div>Rule ID:<br /><code className="px-2 pt-1 border-1 rounded-xl bg-slate-100">{rule.id}</code></div>
+                                    <div>Rule Group ID:<br /><code className="px-2 pt-1 border-1 rounded-xl bg-slate-100">{rule.group_id}</code></div>
+                                    <div>Rule Type:<br /><code className="px-2 pt-1 border-1 rounded-xl bg-slate-100">{rule.type}</code></div>
+                                    <div>Rule:<br /><code className="px-2 pt-1 border-1 rounded-xl bg-slate-100">{rule.rule}</code></div>
+                                    {rule.discordShowPresence !== null ? <div>Rule Discord Presence:<br /><code className="px-2 pt-1 border-1 rounded-xl bg-slate-100">{rule.discordShowPresence === "1" ? "Yes" : "No"}</code></div> : null}
+                                    {rule.discordNiceName !== null ? <div>Rule Discord Presence Title:<br /><code className="px-2 pt-1 border-1 rounded-xl bg-slate-100">{rule.discordNiceName}</code></div> : null}
+                                  </div>
+                              )}
+                          >
+                            <div className="w-6 h-6 p-0.5 mr-2 transition-colors duration-250 dark:text-slate-350">
+                              <FaBug className={`w-full h-full`} />
+                            </div>
+                          </Tooltip>
+                      ) : null}
                       {rule?.discordShowPresence && rule?.discordNiceName ? (
                         <Tooltip
                           id={`tooltip_discord_${groupIndex}_${ruleIndex}`}
-                          placement="leftBottom"
+                          placement="right"
                           noTextWrap={true}
                           content={(
                             <div className="font-bold">
                               <div className="flex items-center">
-                                <I18N index="general_text_discord_appear_as_x_comment" text="Appears as activity's %s state" replace={{"%s": <code className="p-1 border-1 rounded-xl bg-slate-100">{rule.discordNiceName}</code>}} />
+                                <I18N index="general_text_discord_appear_as_x_comment" text="Appears as activity's %s state" replace={{"%s": <code className="px-1 pt-1 mx-2 border-1 rounded-xl bg-slate-100">{rule.discordNiceName}</code>}} />
                               </div>
                             </div>
                           )}
@@ -151,7 +198,7 @@ function IndexPage() {
                       ) : null}
                       <Tooltip
                         id={`tooltip_${groupIndex}_${ruleIndex}`}
-                        placement="leftBottom"
+                        placement="right"
                         noTextWrap={true}
                         content={(
                           <h2 className="font-bold">

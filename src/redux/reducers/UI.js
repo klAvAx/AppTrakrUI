@@ -20,6 +20,9 @@ const initialState = {
   },
   expanded: {
   
+  },
+  statisticGroupLength: {
+
   }
 };
 
@@ -101,6 +104,24 @@ export const UISlice = createSlice({
     },
     toggleExpanded: (state, data) => {
       console.log("toggleExpanded", state, data);
+    },
+
+    resetStatisticGroups: (state) => {
+      state.statisticGroupLength = {};
+    },
+    resetStatisticGroupLength: (state, data) => {
+      if (data.payload.groupID === undefined) return;
+
+      const { groupID } = data.payload;
+
+      state.statisticGroupLength[groupID] = 0;
+    },
+    setStatisticGroupLength: (state, data) => {
+      if (data.payload.groupID === undefined && data.payload.length === undefined) return;
+
+      const { groupID, length } = data.payload;
+
+      state.statisticGroupLength[groupID] = length;
     }
   },
   extraReducers: (builder) => {
@@ -118,6 +139,7 @@ export const {
   setNotification, resetNotification,
   toggleBackdrop, shouldCloseBackdrop, setBackdropIndex,
   disableRecordButton, enableRecordButton,
-  toggleCollapsed, toggleExpanded
+  toggleCollapsed, toggleExpanded,
+  resetStatisticGroups, resetStatisticGroupLength, setStatisticGroupLength
 } = UISlice.actions;
 export default UISlice.reducer;

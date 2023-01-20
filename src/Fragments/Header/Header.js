@@ -10,7 +10,7 @@ import { Transition } from "@headlessui/react";
 import { HiMenu, HiX } from 'react-icons/hi';
 import { FaCircle, FaPaintRoller } from 'react-icons/fa';
 import { BsPinAngle, BsPinAngleFill } from 'react-icons/bs';
-import { TbBraces, TbBracesOff } from 'react-icons/tb';
+import { TbBraces, TbBracesOff, TbBug, TbBugOff } from 'react-icons/tb';
 
 import routes from "../../extra/routes";
 import I18N from "../../extra/I18N";
@@ -30,7 +30,8 @@ export default function Header() {
   
   const appTheme = useSelector(({ electron }) => electron.settings.appTheme);
   const appShowTranslatable = useSelector(({ electron }) => electron.settings.appShowTranslatable);
-  
+  const appShowExtraInfo = useSelector(({ electron }) => electron.settings.appShowExtraInfo) ?? false;
+
   const location = useLocation();
   
   const updateTitle = (newTitle) => {
@@ -160,35 +161,54 @@ export default function Header() {
           <div className={`flex flex-col absolute top-16 left-0 w-full bg-slate-800 shadow-md shadow-slate-800 z-1499`}>
             <div className="flex flex-col px-4">
               {routes.map((item, index) => (
-                <NavLink
-                  key={index}
-                  to={item.href}
-                  className={`flex px-3 py-2 mb-2 last:mb-0 rounded-md text-base font-medium transition-colors duration-250 ${item.href === location.pathname ? "bg-slate-900 text-white" : "text-slate-300 hover:bg-slate-700 hover:text-white"}`}
-                  aria-current={item.href === location.pathname ? "true" : "page"}
-                  onClick={() => setShow(false)}
-                >
-                  {item.name}
-                </NavLink>
+                  <NavLink
+                      key={index}
+                      to={item.href}
+                      className={`flex px-3 py-2 mb-2 last:mb-0 rounded-md text-base font-medium transition-colors duration-250 ${item.href === location.pathname ? "bg-slate-900 text-white" : "text-slate-300 hover:bg-slate-700 hover:text-white"}`}
+                      aria-current={item.href === location.pathname ? "true" : "page"}
+                      onClick={() => setShow(false)}
+                  >
+                    {item.name}
+                  </NavLink>
               ))}
             </div>
             {eEgg === 20 ? (
-              <div className="flex flex-col px-4 py-2">
-                <Tooltip
-                  id={`tooltip_header_eegg_translatable`}
-                  placement="leftBottom"
-                  noTextWrap={true}
-                  content={(
-                    <h2 className="font-bold">{appShowTranslatable ? <I18N index="header_button_title_hide_translatable" text="Hide Translatable text outlines" /> : <I18N index="header_button_title_show_translatable" text="Show Translatable text outlines" /> }</h2>
-                  )}
-                >
-                  <button
-                    onClick={() => {dispatch(setTempAppSetting({setting: "appShowTranslatable", value: !appShowTranslatable}))}}
-                    className={`flex items-center justify-center p-2 rounded-md text-slate-400 transition-colors duration-250 hover:text-white hover:bg-slate-700`}
-                  >
-                    {appShowTranslatable ? <TbBraces className="block h-6 w-6" aria-hidden="true" /> : <TbBracesOff className="block h-6 w-6" aria-hidden="true" />}
-                  </button>
-                </Tooltip>
-              </div>
+                <div className="flex flex-row px-4">
+                  <div className="flex flex-col p-2">
+                    <Tooltip
+                        id={`tooltip_header_eegg_translatable`}
+                        placement="leftBottom"
+                        noTextWrap={true}
+                        content={(
+                            <h2 className="font-bold">{appShowTranslatable ? <I18N index="header_button_title_hide_translatable" text="Hide Translatable text outlines" /> : <I18N index="header_button_title_show_translatable" text="Show Translatable text outlines" /> }</h2>
+                        )}
+                    >
+                      <button
+                          onClick={() => {dispatch(setTempAppSetting({setting: "appShowTranslatable", value: !appShowTranslatable}))}}
+                          className={`flex items-center justify-center p-2 rounded-md text-slate-400 transition-colors duration-250 hover:text-white hover:bg-slate-700`}
+                      >
+                        {appShowTranslatable ? <TbBraces className="block h-6 w-6" aria-hidden="true" /> : <TbBracesOff className="block h-6 w-6" aria-hidden="true" />}
+                      </button>
+                    </Tooltip>
+                  </div>
+                  <div className="flex flex-col p-2">
+                    <Tooltip
+                        id={`tooltip_header_eegg_extrainfo`}
+                        placement="leftBottom"
+                        noTextWrap={true}
+                        content={(
+                            <h2 className="font-bold">{appShowExtraInfo ? <I18N index="header_button_title_hide_extra_info" text="Hide Extra Info Icon" /> : <I18N index="header_button_title_show_extra_info" text="Show Extra Info Icon" /> }</h2>
+                        )}
+                    >
+                      <button
+                          onClick={() => {dispatch(setTempAppSetting({setting: "appShowExtraInfo", value: !appShowExtraInfo}))}}
+                          className={`flex items-center justify-center p-2 rounded-md text-slate-400 transition-colors duration-250 hover:text-white hover:bg-slate-700`}
+                      >
+                        {appShowExtraInfo ? <TbBug className="block h-6 w-6" aria-hidden="true" /> : <TbBugOff className="block h-6 w-6" aria-hidden="true" />}
+                      </button>
+                    </Tooltip>
+                  </div>
+                </div>
             ) : null}
             <div className='flex w-full px-2 py-1 justify-end text-slate-400 select-none' onClick={() => {
               setEEGG((prevState) => {

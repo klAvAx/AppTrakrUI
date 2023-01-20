@@ -24,8 +24,6 @@ function SettingsPage() {
   const appSettings = useSelector(({ electron }) => electron.settings);
   const groups = useSelector(({ simpleDataList }) => simpleDataList?.groups);
   
-  const isRecording = useSelector(({ electron }) => electron.settings.appRecordingProcesses);
-  
   const group1 = useRef();
   const group2 = useRef();
   
@@ -90,9 +88,11 @@ function SettingsPage() {
   return (
     <div className="flex flex-col p-4">
       <div className={`flex flex-col mb-4 border-2 rounded-lg${groupClass}`}>
-        <h2 className={`px-2 py-1 mb-2 text-center text-2xl font-bold border-b-2${groupItemHeaderClass}`}>
-          <I18N index="settings_heading_general_group" text="General" />
-        </h2>
+        <div className="flex flex-col sticky top-0 z-10">
+          <h2 className={`px-2 py-1 mb-2 text-center text-2xl font-bold border-b-2${groupItemHeaderClass}`}>
+            <I18N index="settings_heading_general_group" text="General" />
+          </h2>
+        </div>
         {appSettings.appAutoStart !== null ? (
           <div className={`flex px-2 mb-2 pb-2 gap-4 items-center border-b-2${groupItemClass}`}>
             <div className={`text-right w-full${groupItemDescClass}`}>
@@ -160,9 +160,11 @@ function SettingsPage() {
         </div>
       </div>
       <div className={`flex flex-col mb-4 border-2 rounded-lg${groupClass}`}>
-        <h2 className={`px-2 py-1 mb-2 text-center text-2xl font-bold border-b-2${groupItemHeaderClass}`}>
-          <I18N index="settings_heading_process_list_group" text="Process List" />
-        </h2>
+        <div className="flex flex-col sticky top-0 z-10">
+          <h2 className={`px-2 py-1 mb-2 text-center text-2xl font-bold border-b-2${groupItemHeaderClass}`}>
+            <I18N index="settings_heading_process_list_group" text="Process List" />
+          </h2>
+        </div>
         <div className={`flex px-2 mb-2 pb-2 gap-4 items-center border-b-2${groupItemClass}`}>
           <div className={`text-right w-full${groupItemDescClass}`}>
             <I18N index="settings_label_initial_read_delay" text="Initial Read Delay" />
@@ -174,7 +176,7 @@ function SettingsPage() {
                 onChange={(e) => dispatch(setAppSetting({setting: "appProcessListInitial", value: e.target.value}))}
                 className="border-1 border-slate-500 rounded-l-lg pl-2 w-21"
               />
-              <div className="border-1 border-l-0 border-slate-500 rounded-r-lg px-2 bg-slate-300 w-6">
+              <div className="border-1 border-l-0 border-slate-500 rounded-r-lg px-2 bg-slate-300">
                 <I18N index="general_time_unit_seconds" text="s" />
               </div>
             </div>
@@ -191,7 +193,7 @@ function SettingsPage() {
                 onChange={(e) => dispatch(setAppSetting({setting: "appProcessListRecurring", value: e.target.value}))}
                 className="border-1 border-slate-500 rounded-l-lg pl-2 w-21"
               />
-              <div className="border-1 border-l-0 border-slate-500 rounded-r-lg px-2 bg-slate-300 w-6">
+              <div className="border-1 border-l-0 border-slate-500 rounded-r-lg px-2 bg-slate-300">
                 <I18N index="general_time_unit_seconds" text="s" />
               </div>
             </div>
@@ -199,10 +201,12 @@ function SettingsPage() {
         </div>
       </div>
       <div className={`flex flex-col mb-4 border-2 rounded-lg${groupClass}`}>
-        <h2 className={`px-2 py-1 mb-2 text-center text-2xl font-bold border-b-2${groupItemHeaderClass}`}>
-          <I18N index="settings_heading_statistics_group" text="Statistics" />
-        </h2>
-        <div className={`flex px-2 mb-2 pb-2 gap-4 items-center border-b-2${groupItemClass}`}>
+        <div className="flex flex-col sticky top-0 z-10">
+          <h2 className={`px-2 py-1 mb-2 text-center text-2xl font-bold border-b-2${groupItemHeaderClass}`}>
+            <I18N index="settings_heading_statistics_group" text="Statistics" />
+          </h2>
+        </div>
+        <div className={`flex px-2 mb-2 gap-4 items-center pb-2 border-b-2${groupItemClass}`}>
           <div className={`text-right w-full${groupItemDescClass}`}>
             <I18N index="settings_label_latest_title_count" text="Latest Title Count" />
           </div>
@@ -216,7 +220,7 @@ function SettingsPage() {
             </div>
           </div>
         </div>
-        <div className={`flex px-2 mb-2 pb-2 gap-4 items-center border-b-2${groupItemClass}`}>
+        <div className={`flex px-2 mb-2 gap-4 items-center pb-2 border-b-2${groupItemClass}`}>
           <div className={`text-right w-full${groupItemDescClass}`}>
             <I18N index="settings_label_show_elapsed_days" text="Show elapsed time days" />
           </div>
@@ -227,7 +231,7 @@ function SettingsPage() {
             </Switch>
           </div>
         </div>
-        <div className="flex px-2 mb-2 gap-4 items-center">
+        <div className={`flex px-2 mb-2 gap-4 items-center pb-2 border-b-2${groupItemClass}`}>
           <div className={`text-right w-full${groupItemDescClass}`}>
             <I18N index="settings_label_collapsed_group_by_default" text="Groups are collapsed by default" />
           </div>
@@ -238,11 +242,51 @@ function SettingsPage() {
             </Switch>
           </div>
         </div>
+        <div className={`flex px-2 mb-2 gap-4 items-center pb-2 border-b-2${groupItemClass}`}>
+          <div className={`text-right w-full${groupItemDescClass}`}>
+            <I18N index="settings_label_latest_stat_at_top" text="Latest Statistics at the top" />
+          </div>
+          <div className="text-left w-full">
+            <Switch checked={appSettings.appStatisticsNewestAtTop} onChange={() => dispatch(toggleAppSetting("appStatisticsNewestAtTop"))} className={`${appSettings.appStatisticsNewestAtTop ? 'bg-green-300' : 'bg-red-300'} relative inline-flex items-center h-6 rounded-full w-12`}>
+              <span className="sr-only">{appSettings.appStatisticsNewestAtTop ? <I18N index="settings_disable" text="Disable" noDev={true} /> : <I18N index="settings_enable" text="Enable" noDev={true} />}</span>
+              <span className={`${appSettings.appStatisticsNewestAtTop ? 'translate-x-7 bg-green-600' : 'translate-x-1 bg-red-600'} inline-block w-4 h-4 transform transition rounded-full`} aria-hidden="true" />
+            </Switch>
+          </div>
+        </div>
+        <div className={`flex px-2 mb-2 gap-4 items-center${appSettings.appStatisticsLimitShownEntries ? ` pb-2 border-b-2${groupItemClass}` : ""}`}>
+          <div className={`text-right w-full${groupItemDescClass}`}>
+            <I18N index="settings_label_limit_stat_entries" text="Limit Shown Statistics to Chunks" />
+          </div>
+          <div className="text-left w-full">
+            <Switch checked={appSettings.appStatisticsLimitShownEntries} onChange={() => dispatch(toggleAppSetting("appStatisticsLimitShownEntries"))} className={`${appSettings.appStatisticsLimitShownEntries ? 'bg-green-300' : 'bg-red-300'} relative inline-flex items-center h-6 rounded-full w-12`}>
+              <span className="sr-only">{appSettings.appStatisticsLimitShownEntries ? <I18N index="settings_disable" text="Disable" noDev={true} /> : <I18N index="settings_enable" text="Enable" noDev={true} />}</span>
+              <span className={`${appSettings.appStatisticsLimitShownEntries ? 'translate-x-7 bg-green-600' : 'translate-x-1 bg-red-600'} inline-block w-4 h-4 transform transition rounded-full`} aria-hidden="true" />
+            </Switch>
+          </div>
+        </div>
+        {appSettings.appStatisticsLimitShownEntries ? (
+            <div className={`flex px-2 mb-2 gap-4 items-center`}>
+              <div className={`text-right w-full${groupItemDescClass}`}>
+                <I18N index="settings_label_stat_chunk_size" text="Statistic Chunk Size" />
+              </div>
+              <div className="text-left w-full">
+                <div className="inline-flex">
+                  <input
+                      type="number" min={4} max={64} step={1} value={appSettings.appStatisticsShownEntryChunkSize}
+                      onChange={(e) => dispatch(setAppSetting({setting: "appStatisticsShownEntryChunkSize", value: e.target.value}))}
+                      className="border-1 border-slate-500 rounded-lg pl-2 w-27"
+                  />
+                </div>
+              </div>
+            </div>
+        ) : null}
       </div>
       <div className={`flex flex-col mb-4 border-2 rounded-lg${groupClass}`}>
-        <h2 className={`px-2 py-1 mb-2 text-center text-2xl font-bold border-b-2${groupItemHeaderClass}`}>
-          <I18N index="settings_heading_log_group" text="Logs" />
-        </h2>
+        <div className="flex flex-col sticky top-0 z-10">
+          <h2 className={`px-2 py-1 mb-2 text-center text-2xl font-bold border-b-2${groupItemHeaderClass}`}>
+            <I18N index="settings_heading_log_group" text="Logs" />
+          </h2>
+        </div>
         <div className="flex px-2 mb-2 gap-4 items-center">
           <div className={`text-right w-full${groupItemDescClass}`}>
             <I18N index="settings_label_log_retention" text="Log Retention Period" />
@@ -254,7 +298,7 @@ function SettingsPage() {
                 onChange={(e) => dispatch(setAppSetting({setting: "appLogRetentionDays", value: e.target.value}))}
                 className="border-1 border-slate-500 rounded-l-lg pl-2 w-21"
               />
-              <div className="border-1 border-l-0 border-slate-500 rounded-r-lg px-2 bg-slate-300 w-6">
+              <div className="border-1 border-l-0 border-slate-500 rounded-r-lg px-2 bg-slate-300">
                 <I18N index="general_time_unit_days" text="days" />
               </div>
             </div>
@@ -263,9 +307,11 @@ function SettingsPage() {
       </div>
       {appSettings.appAllowInternetConnectivity && appSettings.appDiscordPossible ? (
         <div className={`flex flex-col mb-4 border-2 rounded-lg${groupClass}`}>
-          <h2 className={`px-2 py-1 mb-2 text-center text-2xl font-bold border-b-2${groupItemHeaderClass}`}>
-            <I18N index="settings_heading_discord" text="Discord" />
-          </h2>
+          <div className="flex flex-col sticky top-0 z-10">
+            <h2 className={`px-2 py-1 mb-2 text-center text-2xl font-bold border-b-2${groupItemHeaderClass}`}>
+              <I18N index="settings_heading_discord" text="Discord" />
+            </h2>
+          </div>
           <div className={`flex px-2 mb-2 gap-4 items-center${groupItemClass}`}>
             <div className={`text-right w-full${groupItemDescClass}`}>
               <I18N index="settings_label_discord_rich_presence" text="Rich Presence" />
@@ -279,15 +325,15 @@ function SettingsPage() {
           </div>
         </div>
       ) : null}
-      <div ref={group1} className={`flex flex-col mb-4 border-2 rounded-lg${groupClass}${appSettings.appRecordingProcesses ? ' relative' : ''}`}>
-        <div className={`flex px-10 py-1 relative justify-center border-b-2${groupItemHeaderClass}`}>
+      <div ref={group1} className={`flex flex-col mb-4 border-2 rounded-lg${groupClass}`}>
+        <div className={`flex sticky top-0 z-[11] px-10 py-1 relative justify-center border-b-2${groupItemHeaderClass}`}>
           <h2 className="justify-middle text-2xl font-bold">
             <I18N index="settings_heading_process_tracking_groups_group" text="Process Tracking Groups" />
           </h2>
           <div className="absolute flex self-center justify-middle right-1">
             <Tooltip
               id={`tooltip_group1`}
-              placement="rightTop"
+              placement="rightBottom"
               noTextWrap={true}
               content={(
                 <h2 className="font-bold text-slate-900">
@@ -333,6 +379,7 @@ function SettingsPage() {
         />
         <Transition
           as={React.Fragment}
+          appear={true}
           show={appSettings.appRecordingProcesses}
           enter="transition duration-250 ease-in"
           enterFrom="transform scale-90 opacity-0"
@@ -347,22 +394,22 @@ function SettingsPage() {
             group1.current.classList.remove("relative");
           }}
         >
-          <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center backdrop-blur-md rounded-lg">
+          <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center backdrop-blur-md rounded-lg z-[12]">
             <h2 className="text-center text-2xl font-bold">
               <I18N index="general_text_setting_not_editable_while_recording" text="This Setting is not editable during process recording" />
             </h2>
           </div>
         </Transition>
       </div>
-      <div ref={group2} className={`flex flex-col border-2 rounded-lg${groupClass}${appSettings.appRecordingProcesses ? ' relative' : ''}`}>
-        <div className={`flex px-10 py-1 relative justify-center border-b-2${groupItemHeaderClass}`}>
+      <div ref={group2} className={`flex flex-col border-2 rounded-lg${groupClass}`}>
+        <div className={`flex sticky top-0 z-10 px-10 py-1 relative justify-center border-b-2${groupItemHeaderClass}`}>
           <h2 className="justify-middle text-2xl font-bold">
             <I18N index="settings_heading_process_tracking_rules_group" text="Process Tracking Rules" />
           </h2>
           <div className="absolute flex self-center justify-middle right-1">
             <Tooltip
               id={`tooltip_group2`}
-              placement="rightTop"
+              placement="rightBottom"
               noTextWrap={true}
               content={(
                 <h2 className="font-bold text-slate-900">
@@ -419,7 +466,8 @@ function SettingsPage() {
           visibleData={[
             { key: "type", type: "icon", icons: icons },
             { type: "group", group: [
-              { key: "rule", type: "text" }, { key: "group_id", type: "subtitle", getter: groups, i18n: {index: "general_text_group_x", text: "Group: %s"} }
+                { key: "rule", type: "text" },
+                { key: "group_id", type: "subtitle", getter: groups, i18n: {index: "general_text_group_x", text: "Group: %s"}}
               ].concat(appSettings.appAllowInternetConnectivity && appSettings.appDiscordEnabled ? [{ key: "discordNiceName", type: "subtitle", i18n: {index: "general_text_discord_appears_as_x", text: "Appears on Discord as: %s"} }] : [])
             }
           ]}
@@ -435,6 +483,7 @@ function SettingsPage() {
         />
         <Transition
           as={React.Fragment}
+          appear={true}
           show={appSettings.appRecordingProcesses}
           enter="transition duration-250 ease-in"
           enterFrom="transform scale-90 opacity-0"
@@ -449,7 +498,7 @@ function SettingsPage() {
             group2.current.classList.remove("relative");
           }}
         >
-          <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center backdrop-blur-md rounded-lg">
+          <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center backdrop-blur-md rounded-lg z-[12]">
             <h2 className="text-center text-2xl font-bold">
               <I18N index="general_text_setting_not_editable_while_recording" text="This Setting is not editable during process recording" />
             </h2>

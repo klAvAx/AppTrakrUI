@@ -1,5 +1,6 @@
 import PropTypes from "prop-types";
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Scrollbars } from "rc-scrollbars";
 
 import { useDispatch, useSelector } from "react-redux";
 import { disableRecordButton, enableRecordButton, resetNotification, setNotification, toggleBackdrop, shouldCloseBackdrop } from "../redux/reducers/UI";
@@ -90,168 +91,171 @@ function SimpleDataList({ type, nameKey, items, visibleData, newButtonState, onO
     });
   }
   
-  const getVisibleData = (data) => {
-    let itemList = [];
-  
-    visibleData.forEach((entry, index) => {
-      switch (entry.type) {
-        case 'icon':
-          if(data[entry.key] == null) break;
-          if(entry.key === 'discordIcon' && !data['discordShowPresence']) break;
-          
-          itemList.push(
-            <div key={`visibleData_${type.toLowerCase()}_${entry.type}_${data.id}${index}`} className="flex w-10 h-10 mr-2">{entry.icons[data[entry.key]]}</div>
-          );
-          break;
-        case 'group':
-          let groupList = [];
-          
-          for(const item of entry.group) {
-            switch (item.type) {
-              case 'text':
-                if (Object.keys(item).includes("getter")) {
-    
-                } else {
-                  groupList.push(
-                    <span
-                      key={`visibleData_${type.toLowerCase()}_${item.type}_${data.id}${index}`}
-                      className={`flex w-full text-left font-normal truncate`}
-                    >{data[item.key]}</span>
-                  );
-                }
-                break;
-              case 'subtitle':
-                let visibleText = "";
-                
-                if (Object.keys(item).includes("getter")) {
-                  visibleText = item.getter.find((element) => element.id === parseInt(data.group_id))?.name;
-                } else {
-                  if(data[item.key] == null) break;
-                  if(item.key === 'discordNiceName' && !data['discordShowPresence']) break;
-                  
-                  visibleText = data[item.key];
-                }
-                
-                if (item?.i18n?.index && item?.i18n?.text) {
-                  visibleText = <I18N index={item.i18n.index} text={item.i18n.text} replace={{"%s": (visibleText ? visibleText : <I18N index="general_text_not_available" text="N/A" />)}} />;
-                }
-                
-                groupList.push(
-                  <span
-                    key={`visibleData_${type.toLowerCase()}_${item.type}${item?.getter ? "G" : ""}_${data.id}${index}`}
-                    className={`flex w-full text-xs text-left truncate p-[2px]`}
-                  >
-                    {visibleText}
-                  </span>
-                );
-                break;
-            }
-          }
-          
-          itemList.push(<div key={`visibleData_${type.toLowerCase()}_${entry.type}_${index}`} className="flex flex-col w-full">{groupList}</div>);
-          break;
-        case 'text':
-          if (Object.keys(entry).includes("getter")) {
-      
-          } else {
-            if(data[entry.key] == null) break;
-            
-            itemList.push(
-              <span
-                key={`visibleData_${type.toLowerCase()}_${entry.type}_${data.id}${index}`}
-                className={`flex w-full text-left font-normal truncate`}
-              >{data[entry.key]}</span>
-            );
-          }
-          break;
-        default:
-          itemList.push(<div>{`Item Type (${entry.type}) not supported!`}</div>);
-          break;
-      }
-    });
-  
-    return itemList;
-  }
-  
   return (
     <div className="flex flex-col">
-      <div className="max-h-[450px] rounded-b-md text-base overflow-auto">
-        {data.length === 0 || !data ? (
-          <div className={`text-center font-bold text-xl`}>
-            <I18N index="general_text_list_empty" text="List is empty" />
-          </div>
-        ) : data.map((item, itemKey) => (
-          <div
-            key={item[nameKey] + itemKey}
-            className={`flex relative items-center text-slate-900 p-2 transition-colors duration-250 ${itemKey % 2 ? 'bg-slate-300 hover:bg-slate-400 dark:bg-slate-600 dark:hover:bg-slate-800' : 'bg-slate-350 hover:bg-slate-400 dark:bg-slate-700 dark:hover:bg-slate-800'}`}
-          >
-            <div className="flex flex-row w-full items-center mr-2 dark:text-slate-300">
-              {getVisibleData(item)}
-            </div>
-            <Tooltip
-              id={`tooltip_${type.toLowerCase()}_${itemKey}_edit`}
-              placement="left"
-              noTextWrap={true}
-              content={(
-                <h2 className="font-bold"><I18N index="general_text_edit" text="Edit" /></h2>
-              )}
-            >
-              <button
-                ref={button1}
-                onClick={() => {setModalEditID(item.id); setModal(true); dispatch(resetNotification());}}
-                className="flex items-center mr-2 p-2.5 transition-colors duration-250 bg-slate-500 hover:bg-slate-600 dark:bg-slate-900 dark:hover:bg-slate-500 text-slate-900 hover:text-slate-200 dark:text-slate-400 dark:hover:text-slate-900"
-                style={buttonsHeightOffset[1] > 0 ? {top: buttonsHeightOffset[1], bottom: buttonsHeightOffset[1]} : {top: 0, bottom: 0}}
+      <div className="rounded-b-md text-base overflow-auto">
+        <Scrollbars
+            className="group/list"
+            autoHide={false}
+            autoHeight
+            autoHeightMax={450}
+            disableDefaultStyles
+            hideTracksWhenNotNeeded
+            renderTrackHorizontal={({ style,  ...props }) => <div {...props} className="transition-colorHeightTransform duration-250 translate-y-full group-hover/list:translate-y-0 group-active/list:translate-y-0 !h-[6px] hover:!h-[12px] active:!h-[12px] border-t-2 border-slate-400 dark:border-slate-800 !bg-slate-300 dark:!bg-slate-700" style={{...style, right: '0px', bottom: '0px', left: '0px', borderRadius: '0px', zIndex: 9}} />}
+            renderTrackVertical={({ style, ...props }) => <div {...props} className="transition-colorWidthTransform duration-250 translate-x-full group-hover/list:translate-x-0 group-active/list:translate-x-0 !w-[6px] hover:!w-[12px] active:!w-[12px] border-l-2 border-slate-400 dark:border-slate-800 !bg-slate-300 dark:!bg-slate-700" style={{...style, top: '0px', right: '0px', bottom: '0px', borderRadius: '0px', zIndex: 9}} />}
+            renderThumbHorizontal={({ style, ...props }) => <div {...props} className="transition-colorWidth duration-250 !bg-slate-500 dark:!bg-slate-900" style={{...style}} />}
+            renderThumbVertical={({ style, ...props }) => <div {...props} className="transition-colorHeight duration-250 !bg-slate-500 dark:!bg-slate-900" style={{...style}} />}
+        >
+          {data.length === 0 || !data ? (
+              <div className={`text-center font-bold text-xl`}>
+                <I18N index="general_text_list_empty" text="List is empty" />
+              </div>
+          ) : data.map((item, itemKey) => (
+              <div
+                  key={item[nameKey] + itemKey}
+                  className={`flex relative items-center text-slate-900 p-2 transition-colors duration-250 ${itemKey % 2 ? 'bg-slate-300 hover:bg-slate-400 dark:bg-slate-600 dark:hover:bg-slate-800' : 'bg-slate-350 hover:bg-slate-400 dark:bg-slate-700 dark:hover:bg-slate-800'}`}
               >
-                <span className="sr-only"><I18N index="general_text_edit" noDev={true} /></span>
-                <FaEdit className="w-5 h-5" aria-hidden="true" />
-              </button>
-            </Tooltip>
-            <Tooltip
-              id={`tooltip_${type.toLowerCase()}_ ${itemKey}_delete`}
-              placement="left"
-              noTextWrap={true}
-              content={(
-                <h2 className="font-bold"><I18N index="general_text_delete" text="Delete" /></h2>
-              )}
-            >
-              <button
-                ref={button2}
-                onClick={() => {
-                  confirm({
-                    title: confirmMessages?.title,
-                    message: confirmMessages?.message,
-                    confirmButton: async () => {
-                      let response = await dispatch(deleteData({ type: type.toLowerCase(), itemID: item.id }));
-                      
-                      if (response.type.includes("rejected")) {
-                        dispatch(setNotification({
-                          message: `general_message_text_x_remove_fail`,
-                          bottomOffset: 0,
-                          args: [`general_text_${type.toLowerCase().slice(0, -1)}`]
-                        }));
-                      } else {
-                        if (onDelete) onDelete();
-                        dispatch(setNotification({
-                          message: `general_message_text_x_remove_success`,
-                          bottomOffset: 0,
-                          args: [`general_text_${type.toLowerCase().slice(0, -1)}`]
-                        }));
-                      }
-                    },
-                    onShow: () => {
-                      dispatch(resetNotification());
+                <div className="flex flex-row w-full items-center mr-2 dark:text-slate-300">
+                  {visibleData.map((vDataEntry, vDataIndex) => {
+                    switch (vDataEntry.type) {
+                      case 'icon':
+                        if(item[vDataEntry.key] == null) return null;
+                        if(vDataEntry.key === 'discordIcon' && (item['discordShowPresence'] === null || item['discordShowPresence'] === "0" || item['discordShowPresence'] === false)) return null;
+
+                        return (<div key={`visibleData_${type.toLowerCase()}_${vDataEntry.type}_${item.id}${vDataIndex}`} className="flex w-10 h-10 mr-2">{vDataEntry.icons[item[vDataEntry.key]]}</div>);
+                      case 'group':
+                        return (
+                            <div key={`visibleData_${type.toLowerCase()}_${vDataEntry.type}_${vDataIndex}`} className="flex flex-col w-full">
+                              {vDataEntry.group.map((subtitle) => {
+                                switch (subtitle.type) {
+                                  case 'text':
+                                    if (Object.keys(subtitle).includes("getter")) {
+
+                                    } else {
+                                      return (
+                                          <span
+                                              key={`visibleData_${type.toLowerCase()}_${subtitle.type}_${item.id}${vDataIndex}`}
+                                              className={`flex w-full text-left font-normal truncate`}
+                                          >
+                                        {item[subtitle.key]}
+                                      </span>
+                                      );
+                                    }
+                                    break;
+                                  case 'subtitle':
+                                    let visibleText = "";
+
+                                    if (Object.keys(subtitle).includes("getter")) {
+                                      visibleText = subtitle.getter.find((element) => element.id === parseInt(item.group_id))?.name;
+                                    } else {
+                                      if(item[subtitle.key] == null) return null;
+                                      if(subtitle.key === 'discordNiceName' && (item['discordShowPresence'] === null || item['discordShowPresence'] === "0" || item['discordShowPresence'] === false)) return null;
+
+                                      visibleText = item[subtitle.key];
+                                    }
+
+                                    if (subtitle?.i18n?.index && subtitle?.i18n?.text) {
+                                      visibleText = <I18N index={subtitle.i18n.index} text={subtitle.i18n.text} replace={{"%s": (visibleText ? visibleText : <I18N index="general_text_not_available" text="N/A" />)}} />;
+                                    }
+
+                                    return (
+                                        <span
+                                            key={`visibleData_${type.toLowerCase()}_${subtitle.type}${subtitle?.getter ? "G" : ""}_${item.id}${vDataIndex}`}
+                                            className={`flex w-full text-xs text-left truncate p-[2px]`}
+                                        >
+                                      {visibleText}
+                                    </span>
+                                    );
+                                }
+                              })}
+                            </div>
+                        );
+                      case 'text':
+                        if (Object.keys(vDataEntry).includes("getter")) {
+
+                        } else {
+                          if(item[vDataEntry.key] == null) return null;
+
+                          return (
+                              <span
+                                  key={`visibleData_${type.toLowerCase()}_${vDataEntry.type}_${item.id}${vDataIndex}`}
+                                  className={`flex w-full text-left font-normal truncate`}
+                              >
+                            {item[vDataEntry.key]}
+                          </span>
+                          );
+                        }
+                        break;
+                      default:
+                        return (<div>{`Item Type (${vDataEntry.type}) not supported!`}</div>);
                     }
-                  });
-                }}
-                className="flex items-center p-2.5 transition-colors duration-250 bg-slate-500 hover:bg-red-500 dark:bg-slate-900 dark:hover:bg-red-500 text-slate-900 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-900"
-                style={buttonsHeightOffset[2] > 0 ? {top: buttonsHeightOffset[2], bottom: buttonsHeightOffset[2]} : {top: 0, bottom: 0}}
-              >
-                <span className="sr-only"><I18N index="general_text_delete" noDev={true} /></span>
-                <FaTimes className="w-5 h-5" aria-hidden="true" />
-              </button>
-            </Tooltip>
-          </div>
-        ))}
+                  })}
+                </div>
+                <Tooltip
+                    id={`tooltip_${type.toLowerCase()}_${itemKey}_edit`}
+                    placement="left"
+                    noTextWrap={true}
+                    content={(
+                        <h2 className="font-bold"><I18N index="general_text_edit" text="Edit" /></h2>
+                    )}
+                >
+                  <button
+                      ref={button1}
+                      onClick={() => {setModalEditID(item.id); setModal(true); dispatch(resetNotification());}}
+                      className="flex items-center mr-2 p-2.5 transition-colors duration-250 bg-slate-500 hover:bg-slate-600 dark:bg-slate-900 dark:hover:bg-slate-500 text-slate-900 hover:text-slate-200 dark:text-slate-400 dark:hover:text-slate-900"
+                      style={buttonsHeightOffset[1] > 0 ? {top: buttonsHeightOffset[1], bottom: buttonsHeightOffset[1]} : {top: 0, bottom: 0}}
+                  >
+                    <span className="sr-only"><I18N index="general_text_edit" noDev={true} /></span>
+                    <FaEdit className="w-5 h-5" aria-hidden="true" />
+                  </button>
+                </Tooltip>
+                <Tooltip
+                    id={`tooltip_${type.toLowerCase()}_ ${itemKey}_delete`}
+                    placement="left"
+                    noTextWrap={true}
+                    content={(
+                        <h2 className="font-bold"><I18N index="general_text_delete" text="Delete" /></h2>
+                    )}
+                >
+                  <button
+                      ref={button2}
+                      onClick={() => {
+                        confirm({
+                          title: confirmMessages?.title,
+                          message: confirmMessages?.message,
+                          confirmButton: async () => {
+                            let response = await dispatch(deleteData({ type: type.toLowerCase(), itemID: item.id }));
+
+                            if (response.type.includes("rejected")) {
+                              dispatch(setNotification({
+                                message: `general_message_text_x_remove_fail`,
+                                bottomOffset: 0,
+                                args: [`general_text_${type.toLowerCase().slice(0, -1)}`]
+                              }));
+                            } else {
+                              if (onDelete) onDelete();
+                              dispatch(setNotification({
+                                message: `general_message_text_x_remove_success`,
+                                bottomOffset: 0,
+                                args: [`general_text_${type.toLowerCase().slice(0, -1)}`]
+                              }));
+                            }
+                          },
+                          onShow: () => {
+                            dispatch(resetNotification());
+                          }
+                        });
+                      }}
+                      className="flex items-center p-2.5 transition-colors duration-250 bg-slate-500 hover:bg-red-500 dark:bg-slate-900 dark:hover:bg-red-500 text-slate-900 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-900"
+                      style={buttonsHeightOffset[2] > 0 ? {top: buttonsHeightOffset[2], bottom: buttonsHeightOffset[2]} : {top: 0, bottom: 0}}
+                  >
+                    <span className="sr-only"><I18N index="general_text_delete" noDev={true} /></span>
+                    <FaTimes className="w-5 h-5" aria-hidden="true" />
+                  </button>
+                </Tooltip>
+              </div>
+          ))}
+        </Scrollbars>
       </div>
       <MiniModal
         show={modal}
@@ -263,7 +267,11 @@ function SimpleDataList({ type, nameKey, items, visibleData, newButtonState, onO
         type={type.toLowerCase().slice(0, -1)}
         edit={modalEditID === 0 ? {} : data.find((element) => element.id === modalEditID)}
         items={items}
-        onSubmit={(colsData) => dispatch(setData(modalEditID === 0 ? {type: type.toLowerCase(), data: colsData} : {type: type.toLowerCase(), data: {id: modalEditID, ...colsData}}))}
+        onSubmit={(colsData) => dispatch(setData(modalEditID === 0 ? {
+          type: type.toLowerCase(), data: colsData
+        } : {
+          type: type.toLowerCase(), data: {id: modalEditID, ...colsData}
+        }))}
       />
     </div>
   );

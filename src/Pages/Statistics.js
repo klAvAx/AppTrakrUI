@@ -1,18 +1,26 @@
-import React, { useEffect, useRef, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import React, {useEffect, useRef, useState} from "react";
+import {useDispatch, useSelector} from "react-redux";
+import {Waypoint} from "react-waypoint";
 import I18N from "../extra/I18N";
 
-import { FaAngleDown, FaFileExport, FaTimes, FaExclamationTriangle } from "react-icons/fa";
-import { TbArrowBarDown, TbArrowBarToDown, TbFilter, TbFilterOff, TbBackspace } from "react-icons/tb";
+import {FaAngleDown, FaBug, FaExclamationTriangle, FaFileExport, FaTimes} from "react-icons/fa";
+import {TbArrowBarDown, TbArrowBarToDown, TbBackspace, TbFilter, TbFilterOff} from "react-icons/tb";
 
-import { confirm } from "../Components/Confirm";
+import {confirm} from "../Components/Confirm";
 import Marquee from "../Components/Marquee";
 import Tooltip from "../Components/Tooltip";
 import Clock from "../Components/Clock";
 
-import { setNotification, toggleCollapsed, deleteGroupData, resetNotification } from "../redux/reducers/UI";
-import { updateAppFilters } from "../redux/reducers/electron";
-import { requestNewStatisticsList } from "../redux/reducers/processList";
+import {
+  deleteGroupData,
+  resetNotification,
+  resetStatisticGroupLength,
+  setNotification,
+  setStatisticGroupLength,
+  toggleCollapsed
+} from "../redux/reducers/UI";
+import {updateAppFilters} from "../redux/reducers/electron";
+import {requestNewStatisticsList} from "../redux/reducers/processList";
 
 // TODO implement statistics export !!!
 function StatisticsPage() {
@@ -23,7 +31,12 @@ function StatisticsPage() {
   const latestTitleCount = useSelector(({ electron }) => electron.settings?.appStatisticsLatestTitleCount);
   const collapsedGroupsByDefault = useSelector(({ electron }) => electron.settings?.appStatisticsCollapsedGroupsByDefault);
   const showElapsedDays = useSelector(({ electron }) => electron.settings?.appStatisticsShowElapsedDays);
-  
+  const latestAtTop = useSelector(({ electron }) => electron.settings?.appStatisticsNewestAtTop);
+  const appShowExtraInfo = useSelector(({ electron }) => electron.settings.appShowExtraInfo) ?? false;
+  const appLimitShownEntries = useSelector(({ electron }) => electron.settings.appStatisticsLimitShownEntries);
+  const appShownEntryChunkSize = useSelector(({ electron }) => electron.settings.appStatisticsShownEntryChunkSize);
+  const uiStatisticsGroupLength = useSelector(({ UI }) => UI.statisticGroupLength);
+
   const padNumber = (number, digits = 2) => {
     let _number = number;
     
@@ -125,7 +138,6 @@ function StatisticsPage() {
       if(entry.intersectionRect.top === entry.rootBounds.top) {
         // Hide collapse button & Square top corners
         entry.target.classList.remove('rounded-t-md');
-        entry.target.style.zIndex = '1';
         const collapseBTN = entry.target.getElementsByClassName('collapseBTN')[0];
         collapseBTN.hidden = true;
         collapseBTN.disabled = true;
@@ -133,7 +145,6 @@ function StatisticsPage() {
         if(entry.intersectionRatio === 1) {
           // Show collapse button & Round top corners
           entry.target.classList.add('rounded-t-md');
-          entry.target.style.zIndex = '';
           const collapseBTN = entry.target.getElementsByClassName('collapseBTN')[0];
           collapseBTN.hidden = false;
           collapseBTN.disabled = false;
@@ -162,7 +173,19 @@ function StatisticsPage() {
     if(observerRef.current) observerRef.current.disconnect();
     observerRef.current = null;
   }
-  
+
+  const getNextGroupLength = (groupID, groupMaxLength) => {
+    let _currentGroupLength = uiStatisticsGroupLength?.[groupID] ?? 0;
+    let _chunkSize = (parseInt(appShownEntryChunkSize) ?? 4);
+    let _initialExtraLength = 0;
+
+    if(_chunkSize <= 10 && _currentGroupLength === 0 && window.innerHeight >= 600) {
+      _initialExtraLength = Math.floor((0.000128 * Math.pow(window.innerHeight, 1.532)) - (1.22 + (_chunkSize - 4)));
+    }
+
+    return Math.min(_currentGroupLength + _chunkSize + _initialExtraLength, groupMaxLength);
+  }
+
   useEffect(() => {
     if(statisticsList.length === 0) dispatch(requestNewStatisticsList());
     
@@ -278,6 +301,7 @@ function StatisticsPage() {
           groupId: group.id,
           groupName: group.name,
           groupIsFiltered: group.filtered,
+          groupItemCount: 0,
           groupRuntime: 0,
           groupRuntimeCache: [],
           groupActive: false,
@@ -364,32 +388,68 @@ function StatisticsPage() {
         }
   
         sorted[group.id]['items'].push(item);
+        sorted[group.id]['groupItemCount']++;
+      }
+
+      if(latestAtTop) {
+        sorted[group.id]['items'] = sorted[group.id]['items'].reverse();
+      }
+
+      // Trim Item List length based on what position it is at
+      if(appLimitShownEntries) {
+        let _groupLength = uiStatisticsGroupLength?.[group.id] ?? 0;
+
+        sorted[group.id]['items'] = sorted[group.id]['items'].slice(0, _groupLength);
       }
     }
-    
+
     return (
       <React.Fragment>
         {Object.keys(sorted).map((group, groupIndex) => {
           const groupID = `G${groupIndex}`;
-          const _collapsed = (collapsedGroupsByDefault ? !collapsed?.[groupID] : collapsed?.[groupID]);
+          const _collapsed = (collapsedGroupsByDefault ? !collapsed?.[groupID] : (collapsed?.[groupID] ?? false));
           const currentTime = new Date().getTime();
-          
+
           return (
             <div
               key={`group_${groupIndex}`}
               className={`flex flex-col relative mb-4 last:mb-0 border-2 rounded-lg transition-colors duration-250 border-slate-400 dark:border-slate-800 bg-slate-200 dark:bg-slate-600`}
             >
-              <div className={`flex sticky top-0 p-2 font-bold ${_collapsed ? 'border-b-0 rounded-md' : 'border-b-2 rounded-t-md'} transition-colors duration-250 border-slate-400 dark:border-slate-800 bg-slate-400 dark:bg-slate-800`}>
+              <div
+                  className={`flex sticky top-0 p-2 font-bold ${_collapsed ? 'border-b-0 rounded-md' : 'border-b-2 rounded-t-md'} transition-colors duration-250 border-slate-400 dark:border-slate-800 bg-slate-400 dark:bg-slate-800`}
+                  style={{zIndex: Object.keys(sorted).length - groupIndex}}
+              >
+                {appShowExtraInfo ? (
+                    <Tooltip
+                        id={`extraInfo_${groupIndex}`}
+                        placement="right"
+                        noTextWrap={true}
+                        content={(
+                            <div>
+                              <div>Group ID:<br /><code className="px-2 pt-1 border-1 rounded-xl bg-slate-100">{sorted[group].groupId}</code></div>
+                              <div>Group Name:<br /><code className="px-2 pt-1 border-1 rounded-xl bg-slate-100">{sorted[group].groupName}</code></div>
+                              <div>Group Active:<br /><code className="px-2 pt-1 border-1 rounded-xl bg-slate-100">{sorted[group].groupActive ? "Yes" : "No"}</code></div>
+                              <div>Group Is Filtered:<br /><code className="px-2 pt-1 border-1 rounded-xl bg-slate-100">{sorted[group].groupIsFiltered ? "Yes" : "No"}</code></div>
+                              <div>Group Total Runtime:<br /><code className="px-2 pt-1 border-1 rounded-xl bg-slate-100">{sorted[group].groupRuntime}</code></div>
+                              <div>Group Total Process Count:<br /><code className="px-2 pt-1 border-1 rounded-xl bg-slate-100">{sorted[group].groupItemCount}</code></div>
+                            </div>
+                        )}
+                    >
+                      <div className="w-6 h-6 p-0.5 mr-2 transition-colors duration-250 dark:text-slate-350">
+                        <FaBug className={`w-full h-full`} />
+                      </div>
+                    </Tooltip>
+                ) : null}
                 <Tooltip
-                  id={`tooltip_${groupIndex}`}
-                  showArrow={true}
-                  placement="right"
-                  noTextWrap={true}
-                  content={(
-                    <h2 className="font-bold">
-                      <I18N index="statistics_text_total_runtime_x" text="Total Runtime: %s" replace={{"%s": formatTimestampToElapsedTime(sorted[group].groupRuntime, showElapsedDays)}} />
-                    </h2>
-                  )}
+                    id={`tooltip_${groupIndex}`}
+                    showArrow={true}
+                    placement="right"
+                    noTextWrap={true}
+                    content={(
+                        <h2 className="font-bold">
+                          <I18N index="statistics_text_total_runtime_x" text="Total Runtime: %s" replace={{"%s": formatTimestampToElapsedTime(sorted[group].groupRuntime, showElapsedDays)}} />
+                        </h2>
+                    )}
                 >
                   <div className="w-6 h-6 mr-2 cursor-copy" onClick={() => {navigator.clipboard.writeText(formatTimestampToElapsedTime(sorted[group].groupRuntime, showElapsedDays))}}>
                     <span className='sr-only'><I18N index="statistics_text_total_runtime_x" replace={{"%s": formatTimestampToElapsedTime(sorted[group].groupRuntime, showElapsedDays)}} noDev={true} /></span>
@@ -520,7 +580,12 @@ function StatisticsPage() {
                 >
                   <button
                     className={`w-6 h-6 ml-2 transition-colors duration-250 text-slate-900 collapseBTN hover:text-slate-50 dark:text-slate-400 dark:hover:text-slate-50`}
-                    onClick={() => dispatch(toggleCollapsed({group: 'statistics', key: groupID}))}
+                    onClick={() => {
+                      dispatch(toggleCollapsed({group: 'statistics', key: groupID}));
+                      if(appLimitShownEntries && !_collapsed) {
+                        dispatch(resetStatisticGroupLength({groupID: sorted[group].groupId}));
+                      }
+                    }}
                   >
                     <span className='sr-only'>{ _collapsed ? <I18N index="general_text_expand" noDev={true} /> : <I18N index="general_text_collapse" noDev={true} /> }</span>
                     <FaAngleDown className={`w-full h-full transition ${_collapsed ? 'rotate-0' : 'rotate-180'}`} aria-hidden="true" />
@@ -528,185 +593,231 @@ function StatisticsPage() {
                 </Tooltip>
               </div>
               {!_collapsed ? (
-                <div className={`flex flex-col`}>
-                  <div className={`flex p-2 font-bold border-b-2 transition-colors duration-250 border-slate-400 dark:border-slate-800 bg-slate-400 dark:bg-slate-800`}>
-                    <div className="border-1 border-r-0 rounded-l-lg p-2 transition-colors duration-250 text-slate-900 dark:text-slate-400 border-slate-900 dark:border-slate-400 bg-slate-400 dark:bg-slate-800">
-                      <TbFilter className="w-6 h-6" />
-                    </div>
-                    <input
-                      type="text" value={filterQuery[group] !== undefined ? filterQuery[group] : (filters?.[group]?.['query'] ? filters[group]['query'] : "")}
-                      onChange={(e) => setFilterQuery((prevState) => {
-                        return {
-                          ...prevState,
-                          [group]: e.target.value
-                        };
-                      })}
-                      onBlur={(e) => dispatch(updateAppFilters({groupID: group, filterType: "query", filterData: filterQuery[group]}))}
-                      onKeyUp={(e) => { if(e.code === "Enter") dispatch(updateAppFilters({groupID: group, filterType: "query", filterData: filterQuery[group]})) }}
-                      className="border-1 pl-2 w-full focus:outline-0 transition-colors duration-250 text-slate-900 dark:text-slate-300 border-slate-900 dark:border-slate-400 bg-slate-300 dark:bg-slate-700"
-                    />
-                    <button
-                      onClick={(e) => {
-                        setFilterQuery((prevState) => {
-                          return {
-                            ...prevState,
-                            [group]: ""
-                          };
-                        });
-                        dispatch(updateAppFilters({groupID: group, filterType: "query", filterData: ""}))
-                      }}
-                      className="border-1 border-l-0 rounded-r-lg p-2 transition-colors duration-250 text-slate-900 dark:text-slate-400 hover:dark:text-slate-300 border-slate-900 dark:border-slate-400 bg-slate-400 hover:bg-slate-300 dark:bg-slate-800 hover:dark:bg-slate-700"
-                    >
-                      <TbBackspace className="w-6 h-6" />
-                    </button>
-                  </div>
-                  {sorted[group].items.length ? sorted[group].items.map((process, processIndex) => {
-                    const processID = `G${groupIndex}P${processIndex}`;
-                    const _collapsedProcess = collapsed?.[processID];
-                    
-                    return (
-                      <div
-                        key={`process_${processIndex}`}
-                        className={`flex p-2 border-b-2 last:border-b-0 transition-colors duration-250 border-slate-400 dark:border-slate-800 bg-slate-200 dark:bg-slate-600`}
+                  <div className={`flex flex-col`}>
+                    <div className={`flex p-2 font-bold border-b-2 transition-colors duration-250 border-slate-400 dark:border-slate-800 bg-slate-400 dark:bg-slate-800`}>
+                      <div className="border-1 border-r-0 rounded-l-lg p-2 transition-colors duration-250 text-slate-900 dark:text-slate-400 border-slate-900 dark:border-slate-400 bg-slate-400 dark:bg-slate-800">
+                        <TbFilter className="w-6 h-6" />
+                      </div>
+                      <input
+                          type="text" value={filterQuery[group] !== undefined ? filterQuery[group] : (filters?.[group]?.['query'] ? filters[group]['query'] : "")}
+                          onChange={(e) => setFilterQuery((prevState) => {
+                            return {
+                              ...prevState,
+                              [group]: e.target.value
+                            };
+                          })}
+                          onBlur={(e) => dispatch(updateAppFilters({groupID: group, filterType: "query", filterData: filterQuery[group]}))}
+                          onKeyUp={(e) => { if(e.code === "Enter") dispatch(updateAppFilters({groupID: group, filterType: "query", filterData: filterQuery[group]})) }}
+                          className="border-1 pl-2 w-full focus:outline-0 transition-colors duration-250 text-slate-900 dark:text-slate-300 border-slate-900 dark:border-slate-400 bg-slate-300 dark:bg-slate-700"
+                      />
+                      <button
+                          onClick={(e) => {
+                            setFilterQuery((prevState) => {
+                              return {
+                                ...prevState,
+                                [group]: ""
+                              };
+                            });
+                            dispatch(updateAppFilters({groupID: group, filterType: "query", filterData: ""}))
+                          }}
+                          className="border-1 border-l-0 rounded-r-lg p-2 transition-colors duration-250 text-slate-900 dark:text-slate-400 hover:dark:text-slate-300 border-slate-900 dark:border-slate-400 bg-slate-400 hover:bg-slate-300 dark:bg-slate-800 hover:dark:bg-slate-700"
                       >
-                        <div className="flex flex-col w-full">
-                          <div className="relative w-full mb-2 last:mb-0 px-12 text-center text-xl font-bold whitespace-nowrap transition-colors duration-250 hover:bg-slate-300 dark:hover:bg-slate-800">
-                            <div className="absolute flex justify-start left-0 top-[2px] w-12 h-6">
-                              <Tooltip
-                                id={`tooltip_${groupIndex}_${processIndex}_trackFrom`}
-                                placement="leftBottom"
-                                noTextWrap={true}
-                                content={(
-                                  <h2 className="font-bold text-base">
-                                    <I18N index="general_text_apply_tracking_offset_from" text="Apply Tracking Offset From this Point (INCLUSIVE)" />
-                                  </h2>
-                                )}
-                              >
-                                <TbArrowBarDown
-                                  className={`w-6 h-full cursor-pointer transition-colors duration-250 hover:text-slate-50 ${filters?.[group]?.from === process.startedAt ? 'text-slate-900 dark:text-slate-400' : 'text-slate-400 dark:text-slate-900'} dark:hover:text-slate-50`}
-                                  aria-hidden="true" onClick={() => {dispatch(updateAppFilters({groupID: group, filterType: "from", filterData: filters?.[group]?.from === process.startedAt ? "" : process.startedAt}))}}
-                                />
-                              </Tooltip>
-                              <Tooltip
-                                id={`tooltip_${groupIndex}_${processIndex}_trackTo`}
-                                placement="leftBottom"
-                                noTextWrap={true}
-                                content={(
-                                  <h2 className="font-bold text-base">
-                                    <I18N index="general_text_apply_tracking_offset_to" text="Apply Tracking Offset Up To this Point (INCLUSIVE)" />
-                                  </h2>
-                                )}
-                              >
-                                <TbArrowBarToDown
-                                  className={`w-6 h-full cursor-pointer transition-colors duration-250 hover:text-slate-50 ${filters?.[group]?.to === process.stoppedAt ? 'text-slate-900 dark:text-slate-400' : 'text-slate-400 dark:text-slate-900'} dark:hover:text-slate-50`}
-                                  aria-hidden="true" onClick={() => {dispatch(updateAppFilters({groupID: group, filterType: "to", filterData: filters?.[group]?.to === process.stoppedAt ? "" : process?.stoppedAt}))}}
-                                />
-                              </Tooltip>
-                            </div>
-                            <Tooltip
-                              id={`tooltip_${groupIndex}_${processIndex}_title`}
-                              placement="rightBottom"
-                              noTextWrap={true}
-                              content={(
-                                <h2 className="font-bold text-base">
-                                  {_collapsedProcess ? <I18N index="general_text_expand" text="Expand" /> : <I18N index="general_text_collapse" text="Collapse" />}
-                                </h2>
-                              )}
-                            >
-                              <div
-                                className={`w-full select-none cursor-pointer transition-colors duration-250 dark:text-slate-350`}
-                                onClick={() => {dispatch(toggleCollapsed({group: 'statistics', key: processID}))}}
-                              >
-                                <I18N index='statistics_heading_process_details' text='Process Details' />
+                        <TbBackspace className="w-6 h-6" />
+                      </button>
+                    </div>
+                    {sorted[group].items.length ? sorted[group].items.map((process, processIndex) => {
+                      const processID = `G${groupIndex}P${processIndex}`;
+                      const _collapsedProcess = collapsed?.[processID];
+
+                      return (
+                          <div
+                              key={`process_${processIndex}`}
+                              className={`flex p-2 border-b-2 last:border-b-0 transition-colors duration-250 border-slate-400 dark:border-slate-800 bg-slate-200 dark:bg-slate-600`}
+                          >
+                            <div className="flex flex-col w-full">
+                              <div className="relative w-full mb-2 last:mb-0 px-12 text-center text-xl font-bold whitespace-nowrap transition-colors duration-250 hover:bg-slate-300 dark:hover:bg-slate-800">
+                                <div className="absolute flex justify-start left-0 top-[2px] w-12 h-6">
+                                  <Tooltip
+                                      id={`tooltip_${groupIndex}_${processIndex}_trackFrom`}
+                                      placement="leftBottom"
+                                      noTextWrap={true}
+                                      content={(
+                                          <h2 className="font-bold text-base">
+                                            <I18N index="general_text_apply_tracking_offset_from" text="Apply Tracking Offset From this Point (INCLUSIVE)" />
+                                          </h2>
+                                      )}
+                                  >
+                                    <TbArrowBarDown
+                                        className={`w-6 h-full cursor-pointer transition-colors duration-250 hover:text-slate-50 ${filters?.[group]?.from === process.startedAt ? 'text-slate-900 dark:text-slate-400' : 'text-slate-400 dark:text-slate-900'} dark:hover:text-slate-50`}
+                                        aria-hidden="true" onClick={() => {dispatch(updateAppFilters({groupID: group, filterType: "from", filterData: filters?.[group]?.from === process.startedAt ? "" : process.startedAt}))}}
+                                    />
+                                  </Tooltip>
+                                  <Tooltip
+                                      id={`tooltip_${groupIndex}_${processIndex}_trackTo`}
+                                      placement="leftBottom"
+                                      noTextWrap={true}
+                                      content={(
+                                          <h2 className="font-bold text-base">
+                                            <I18N index="general_text_apply_tracking_offset_to" text="Apply Tracking Offset Up To this Point (INCLUSIVE)" />
+                                          </h2>
+                                      )}
+                                  >
+                                    <TbArrowBarToDown
+                                        className={`w-6 h-full cursor-pointer transition-colors duration-250 hover:text-slate-50 ${filters?.[group]?.to === process.stoppedAt ? 'text-slate-900 dark:text-slate-400' : 'text-slate-400 dark:text-slate-900'} dark:hover:text-slate-50`}
+                                        aria-hidden="true" onClick={() => {dispatch(updateAppFilters({groupID: group, filterType: "to", filterData: filters?.[group]?.to === process.stoppedAt ? "" : process?.stoppedAt}))}}
+                                    />
+                                  </Tooltip>
+                                </div>
+                                <Tooltip
+                                    id={`tooltip_${groupIndex}_${processIndex}_title`}
+                                    placement="rightBottom"
+                                    noTextWrap={true}
+                                    content={(
+                                        <h2 className="font-bold text-base">
+                                          {_collapsedProcess ? <I18N index="general_text_expand" text="Expand" /> : <I18N index="general_text_collapse" text="Collapse" />}
+                                        </h2>
+                                    )}
+                                >
+                                  <div
+                                      className={`w-full select-none cursor-pointer transition-colors duration-250 dark:text-slate-350`}
+                                      onClick={() => {dispatch(toggleCollapsed({group: 'statistics', key: processID}))}}
+                                  >
+                                    <I18N index='statistics_heading_process_details' text='Process Details' />
+                                  </div>
+                                </Tooltip>
+                                <div className="absolute flex justify-end right-0 top-[2px] w-12 h-6">
+                                  {appShowExtraInfo ? (
+                                      <Tooltip
+                                          id={`extraInfo_${groupIndex}`}
+                                          placement="left"
+                                          noTextWrap={true}
+                                          content={(
+                                              <div className="text-left">
+                                                <div>Process ID:<br /><code className="px-2 pt-1 border-1 rounded-xl bg-slate-100">{process.id}</code></div>
+                                                <div>Process Started At:<br /><code className="px-2 pt-1 border-1 rounded-xl bg-slate-100">{process.startedAt}</code></div>
+                                                <div>Process Stopped At:<br /><code className="px-2 pt-1 border-1 rounded-xl bg-slate-100">{process.stoppedAt}</code></div>
+                                                <div>Process Rule Group ID:<br /><code className="px-2 pt-1 border-1 rounded-xl bg-slate-100">{process.rule_group_id}</code></div>
+                                                <div>Process Rule ID:<br /><code className="px-2 pt-1 border-1 rounded-xl bg-slate-100">{process.rule_id}</code></div>
+                                                <div>Process Rule Type:<br /><code className="px-2 pt-1 border-1 rounded-xl bg-slate-100">{process.rule_type}</code></div>
+                                                <div>Process Rule:<br /><code className="px-2 pt-1 border-1 rounded-xl bg-slate-100">{process.rule_rule}</code></div>
+                                                <div>Process Title Change Count:<br /><code className="px-2 pt-1 border-1 rounded-xl bg-slate-100">{Object.values(process.titles).length}</code></div>
+                                              </div>
+                                          )}
+                                      >
+                                        <div className="w-6 h-6 p-0.5 transition-colors duration-250 dark:text-slate-350">
+                                          <FaBug className={`w-full h-full`} />
+                                        </div>
+                                      </Tooltip>
+                                  ) : null}
+                                  <Tooltip
+                                      id={`tooltip_${groupIndex}_${processIndex}_expand`}
+                                      placement="rightBottom"
+                                      noTextWrap={true}
+                                      content={(
+                                          <h2 className="font-bold text-base">
+                                            {_collapsedProcess ? <I18N index="general_text_expand" text="Expand" /> : <I18N index="general_text_collapse" text="Collapse" />}
+                                          </h2>
+                                      )}
+                                  >
+                                    <FaAngleDown
+                                        className={`w-6 h-full cursor-pointer transition-colors duration-250 hover:text-slate-50 dark:text-slate-400 dark:hover:text-slate-50 ${_collapsedProcess ? 'rotate-0' : 'rotate-180'}`}
+                                        aria-hidden="true" onClick={() => {dispatch(toggleCollapsed({group: 'statistics', key: processID}))}}
+                                    />
+                                  </Tooltip>
+                                </div>
                               </div>
-                            </Tooltip>
-                            <div className="absolute flex justify-end right-0 top-[2px] w-12 h-6">
-                              <Tooltip
-                                id={`tooltip_${groupIndex}_${processIndex}_expand`}
-                                placement="rightBottom"
-                                noTextWrap={true}
-                                content={(
-                                  <h2 className="font-bold text-base">
-                                    {_collapsedProcess ? <I18N index="general_text_expand" text="Expand" /> : <I18N index="general_text_collapse" text="Collapse" />}
-                                  </h2>
-                                )}
-                              >
-                                <FaAngleDown
-                                  className={`w-6 h-full cursor-pointer transition-colors duration-250 hover:text-slate-50 dark:text-slate-400 dark:hover:text-slate-50 ${_collapsedProcess ? 'rotate-0' : 'rotate-180'}`}
-                                  aria-hidden="true" onClick={() => {dispatch(toggleCollapsed({group: 'statistics', key: processID}))}}
-                                />
-                              </Tooltip>
+                              {!_collapsedProcess ? (
+                                  <div className={`flex flex-col`}>
+                                    {Object.keys(process.titles).length === 1 ? (
+                                        <React.Fragment>
+                                          <h3 className="w-full mb-2 text-center font-bold select-none whitespace-nowrap transition-colors duration-250 text-slate-900 dark:text-slate-350">
+                                            <I18N index='statistics_heading_window_title' text='Window Title' />
+                                          </h3>
+                                          <div
+                                              className="w-full mb-2 transition-colors duration-250 text-slate-900 dark:text-slate-350 select-none cursor-copy"
+                                              onClick={() => {navigator.clipboard.writeText(process.titles[Object.keys(process.titles)[0]])}}
+                                          >
+                                            <Marquee text={process.titles[Object.keys(process.titles)[0]]} />
+                                          </div>
+                                        </React.Fragment>
+                                    ) : constructTitles(processID, process, currentTime)}
+                                    <div className='flex w-full gap-2'>
+                                      <div className='flex w-full flex-col'>
+                                        <h2 className="w-full text-center font-bold whitespace-nowrap transition-colors duration-250 text-slate-900 dark:text-slate-350 select-none">
+                                          <I18N index='statistics_heading_started_at' text='Started At' />
+                                        </h2>
+                                        <div
+                                            className='w-full truncate text-center transition-colors duration-250 text-slate-900 dark:text-slate-350 select-none cursor-copy'
+                                            onClick={() => {navigator.clipboard.writeText(formatTimestampToDate(process.startedAt))}}
+                                        >
+                                          {formatTimestampToDate(process.startedAt)}
+                                        </div>
+                                      </div>
+                                      <div className='flex w-full flex-col'>
+                                        <h2 className="w-full text-center font-bold whitespace-nowrap transition-colors duration-250 text-slate-900 dark:text-slate-350 select-none">
+                                          <I18N index='statistics_heading_total_runtime' text='Total Runtime' />
+                                        </h2>
+                                        <div
+                                            className={`w-full truncate text-center transition-colors duration-250 text-slate-900 dark:text-slate-350 select-none cursor-copy ${process.startedAt && process.stoppedAt ? '' : 'jsTimer'}`}
+                                            onClick={() => {navigator.clipboard.writeText(process.startedAt && process.stoppedAt ?
+                                                formatTimestampToElapsedTime(process.stoppedAt - process.startedAt) :
+                                                formatTimestampToElapsedTime(currentTime - process.startedAt)
+                                            )}}
+                                        >
+                                          {process.startedAt && process.stoppedAt ?
+                                              formatTimestampToElapsedTime(process.stoppedAt - process.startedAt) :
+                                              formatTimestampToElapsedTime(currentTime - process.startedAt)
+                                          }
+                                        </div>
+                                      </div>
+                                      <div className='flex w-full flex-col'>
+                                        <h2 className="w-full text-center font-bold whitespace-nowrap transition-colors duration-250 text-slate-900 dark:text-slate-350 select-none">
+                                          <I18N index='statistics_heading_stopped_at' text='Stopped At' />
+                                        </h2>
+                                        <div
+                                            className='w-full truncate text-center transition-colors duration-250 text-slate-900 dark:text-slate-350 select-none cursor-copy'
+                                            onClick={() => {navigator.clipboard.writeText(process.stoppedAt ? formatTimestampToDate(process.stoppedAt) : '-')}}
+                                        >
+                                          {process.stoppedAt ? formatTimestampToDate(process.stoppedAt) : <I18N index="statistics_text_still_running" text="Still Running" />}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                              ) : null}
                             </div>
                           </div>
-                          {!_collapsedProcess ? (
-                            <div className={`flex flex-col`}>
-                              {Object.keys(process.titles).length === 1 ? (
-                                <React.Fragment>
-                                  <h3 className="w-full mb-2 text-center font-bold select-none whitespace-nowrap transition-colors duration-250 text-slate-900 dark:text-slate-350">
-                                    <I18N index='statistics_heading_window_title' text='Window Title' />
-                                  </h3>
-                                  <div
-                                    className="w-full mb-2 transition-colors duration-250 text-slate-900 dark:text-slate-350 select-none cursor-copy"
-                                    onClick={() => {
-                                      navigator.clipboard.writeText(process.titles[Object.keys(process.titles)[0]])
-                                    }}
-                                  >
-                                    <Marquee text={process.titles[Object.keys(process.titles)[0]]} />
-                                  </div>
-                                </React.Fragment>
-                              ) : constructTitles(processID, process, currentTime)}
-                              <div className='flex w-full gap-2'>
-                                <div className='flex w-full flex-col'>
-                                  <h2 className="w-full text-center font-bold whitespace-nowrap transition-colors duration-250 text-slate-900 dark:text-slate-350 select-none">
-                                    <I18N index='statistics_heading_started_at' text='Started At' />
-                                  </h2>
-                                  <div
-                                    className='w-full truncate text-center transition-colors duration-250 text-slate-900 dark:text-slate-350 select-none cursor-copy'
-                                    onClick={() => {navigator.clipboard.writeText(formatTimestampToDate(process.startedAt))}}
-                                  >
-                                    {formatTimestampToDate(process.startedAt)}
-                                  </div>
-                                </div>
-                                <div className='flex w-full flex-col'>
-                                  <h2 className="w-full text-center font-bold whitespace-nowrap transition-colors duration-250 text-slate-900 dark:text-slate-350 select-none">
-                                    <I18N index='statistics_heading_total_runtime' text='Total Runtime' />
-                                  </h2>
-                                  <div
-                                    className={`w-full truncate text-center transition-colors duration-250 text-slate-900 dark:text-slate-350 select-none cursor-copy ${process.startedAt && process.stoppedAt ? '' : 'jsTimer'}`}
-                                    onClick={() => {navigator.clipboard.writeText(process.startedAt && process.stoppedAt ?
-                                      formatTimestampToElapsedTime(process.stoppedAt - process.startedAt) :
-                                      formatTimestampToElapsedTime(currentTime - process.startedAt)
-                                    )}}
-                                  >
-                                    {process.startedAt && process.stoppedAt ?
-                                      formatTimestampToElapsedTime(process.stoppedAt - process.startedAt) :
-                                      formatTimestampToElapsedTime(currentTime - process.startedAt)
-                                    }
-                                  </div>
-                                </div>
-                                <div className='flex w-full flex-col'>
-                                  <h2 className="w-full text-center font-bold whitespace-nowrap transition-colors duration-250 text-slate-900 dark:text-slate-350 select-none">
-                                    <I18N index='statistics_heading_stopped_at' text='Stopped At' />
-                                  </h2>
-                                  <div
-                                    className='w-full truncate text-center transition-colors duration-250 text-slate-900 dark:text-slate-350 select-none cursor-copy'
-                                    onClick={() => {navigator.clipboard.writeText(process.stoppedAt ? formatTimestampToDate(process.stoppedAt) : '-')}}
-                                  >
-                                    {process.stoppedAt ? formatTimestampToDate(process.stoppedAt) : <I18N index="statistics_text_still_running" text="Still Running" />}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          ) : null}
+                      );
+                    }) : (
+                        <div className={`flex justify-center p-2 font-bold transition-colors duration-250 text-slate-900 dark:text-slate-350`}>
+                          {
+                            sorted[group].groupIsFiltered ? (
+                                <I18N index="statistics_filter_too_strong" text="Specified Filtering is too strict!" />
+                            ) : (
+                                appLimitShownEntries && sorted[group].groupItemCount > 0 ? null : (
+                                    <I18N index="statistics_group_has_no_items" text="This Group does not have any Statistics to show." />
+                                )
+                            )
+                          }
                         </div>
-                      </div>
-                    );
-                  }): (
-                    <div className={`flex justify-center p-2 font-bold transition-colors duration-250 text-slate-900 dark:text-slate-350`}>
-                      {sorted[group].groupIsFiltered ? <I18N index="statistics_filter_too_strong" text="Specified Filtering is too strict!" /> : <I18N index="statistics_group_has_no_items" text="This Group does not have any Statistics to show." />}
-                    </div>
-                  )}
-                </div>
+                    )}
+                    {appLimitShownEntries && sorted[group].groupItemCount > (uiStatisticsGroupLength?.[sorted[group].groupId] ?? 0) ? (
+                        <Waypoint
+                            bottomOffset="-250px"
+                            onEnter={() => {
+                              let _groupID = sorted[group].groupId;
+                              let _groupMaxLength = sorted[group].groupItemCount;
+                              let _groupTargetLength = getNextGroupLength(_groupID, _groupMaxLength);
+
+                              dispatch(setStatisticGroupLength({groupID: _groupID, length: _groupTargetLength}));
+                            }}
+                            fireOnRapidScroll={true}
+                        >
+                          <div className={`flex justify-center p-2 font-bold transition-colors duration-250 text-slate-900 dark:text-slate-350`}>
+                            <I18N index="general_text_loading" text="Loading..." />
+                          </div>
+                        </Waypoint>
+                    ) : null}
+                  </div>
               ) : null}
             </div>
           );
