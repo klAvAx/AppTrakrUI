@@ -23,12 +23,21 @@ const initialState = {
   },
   statisticGroupLength: {
 
-  }
+  },
+  keyboardState: {}
 };
 
 export const deleteGroupData = createAsyncThunk("ui/deleteGroupData", async (groupID, thunkAPI) => {
   try {
     return await window.ipc.invokeGeneralInvoke({action: "deleteGroupData", payload: groupID});
+  } catch (error) {
+    return thunkAPI.rejectWithValue({ error: error.message });
+  }
+});
+
+export const deleteItem = createAsyncThunk("ui/deleteItem", async (itemID, thunkAPI) => {
+  try {
+    return await window.ipc.invokeGeneralInvoke({action: "deleteItem", payload: itemID});
   } catch (error) {
     return thunkAPI.rejectWithValue({ error: error.message });
   }
@@ -122,6 +131,12 @@ export const UISlice = createSlice({
       const { groupID, length } = data.payload;
 
       state.statisticGroupLength[groupID] = length;
+    },
+
+    setKeyboardState: (state, data) => {
+      const { key, value } = data.payload;
+
+      state.keyboardState[key] = value;
     }
   },
   extraReducers: (builder) => {
@@ -132,6 +147,13 @@ export const UISlice = createSlice({
     builder.addCase(deleteGroupData.rejected, (state, response) => {
       console.error("TODO", "deleteGroupData", response);
     });
+
+    builder.addCase(deleteItem.fulfilled, (state, response) => {
+      //console.log(state, response);
+    });
+    builder.addCase(deleteItem.rejected, (state, response) => {
+      console.error("TODO", "deleteItem", response);
+    });
   }
 });
 
@@ -140,6 +162,7 @@ export const {
   toggleBackdrop, shouldCloseBackdrop, setBackdropIndex,
   disableRecordButton, enableRecordButton,
   toggleCollapsed, toggleExpanded,
-  resetStatisticGroups, resetStatisticGroupLength, setStatisticGroupLength
+  resetStatisticGroups, resetStatisticGroupLength, setStatisticGroupLength,
+  setKeyboardState
 } = UISlice.actions;
 export default UISlice.reducer;

@@ -18,19 +18,7 @@ function App() {
   const theme = useSelector(({ electron }) => electron.settings.appTheme);
   const dispatch = useDispatch();
   const location = useLocation();
-  
-  const [kbdState, setKbdState] = useState({});
-  const reportErrors = (err) => {
-    window.ipc.sendTrayWindow({
-      action: "error",
-      payload: {
-        error: err.error,
-        filename: `${err.filename}:${err.lineno}`,
-        message: err.message
-      }
-    });
-  };
-  
+
   useEffect(() => {
     // Runs once On Mount
     dispatch(getAppSettings());
@@ -62,44 +50,9 @@ function App() {
     window.ipc.onTrayWindow((data) => {
       console.log("ipc", "onTrayWindow", data);
     });
-    
-    window.addEventListener('error', reportErrors);
-    
-    // Window Controls
-    /*window.addEventListener('keyup', (e) => {
-      if (e.key === 'Control' || e.keyCode === 17) {
-        setKbdState((prevState) => {return {...prevState, ctrl: e.type === 'keydown'}});
-      } else if (e.key === 'F5' || e.keyCode === 116) {
-        window.app.reload();
-      } else if (e.key === 'F12' || e.keyCode === 123) {
-        window.app.openDevTools();
-      } else {
-        console.log('[preload.js]', '[KeyUp Event]', 'Key: ' + e.key, 'KeyCode: ' + e.keyCode);
-      }
-    });*/
-    /*window.addEventListener('keydown', (e) => {
-      if (e.key === 'Control' || e.keyCode === 17) {
-        setKbdState((prevState) => {return {...prevState, ctrl: e.type === 'keydown'}});
-      } else if (e.key === '0' || e.keyCode === 96) {
-        if (kbdState?.ctrl) {
-          window.app.zoomReset();
-        }
-      } else if (e.key === '+' || e.keyCode === 107) {
-        if (kbdState?.ctrl) {
-          window.app.zoomIn();
-        }
-      } else if (e.key === '-' || e.keyCode === 109) {
-        if (kbdState?.ctrl) {
-          window.app.zoomOut();
-        }
-      } else {
-        console.log('[preload.js]', '[KeyDown Event]', 'Key: ' + e.key, 'KeyCode: ' + e.keyCode);
-      }
-    });*/
-    
+
     return () => {
       // Runs once on Destroy
-      window.removeEventListener('error', reportErrors);
     }
   }, []);
   
@@ -125,7 +78,7 @@ function App() {
   }, [theme]);
 
   useEffect(() => {
-    document.getElementById('mainContainer').scrollTo(0, 0);
+    document.getElementById('mainContainer')?.scrollTo(0, 0);
   }, [location]);
 
   return (
