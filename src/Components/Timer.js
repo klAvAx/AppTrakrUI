@@ -75,7 +75,9 @@ const Timer = ({ start, end, mode }) => {
             if(timer.current) clearInterval(timer.current);
 
             setEndTimestamp(end);
+            setCurrentTimestamp(0);
         } else {
+            setEndTimestamp(0);
             setCurrentTimestamp(new Date().getTime());
 
             timer.current = setInterval(() => {
@@ -95,11 +97,11 @@ const Timer = ({ start, end, mode }) => {
             return startTimestamp ? formatTimestampToDate(startTimestamp) : "-";
         }
         case "calc": {
+            if(startTimestamp && currentTimestamp) {
+                return formatTimestampToElapsedTime(currentTimestamp - startTimestamp);
+            }
             if(startTimestamp && endTimestamp) {
                 return formatTimestampToElapsedTime(endTimestamp - startTimestamp);
-            }
-            if(startTimestamp && !endTimestamp) {
-                return formatTimestampToElapsedTime(currentTimestamp - startTimestamp);
             }
 
             return "-";
